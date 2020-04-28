@@ -1,0 +1,7 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./tmp/db:/media/apps4/postgres/data

@@ -204,7 +204,7 @@ CREATE INDEX IDX_QRTZ_FT_TG
 
 
   CREATE TABLE users (
-  id identity not null auto_increment,
+  userid bigserial ,
   username VARCHAR(50) not null,
   password VARCHAR(50) not null,
   fName VARCHAR(50) not null,
@@ -213,17 +213,32 @@ CREATE INDEX IDX_QRTZ_FT_TG
   email VARCHAR(100) not null,
   role VARCHAR(30) not null,
   active VARCHAR(30) not null,
-  primary key (id)
+  primary key (userid)
+);
+drop table if exists  users;
+drop index if exists users_pkey;
+drop sequence if exists users_userid_seq;
+
+ CREATE TABLE authorities_user (
+  auth_user_id bigserial not null ,
+  userid bigserial ,
+  username text,
+  role_id text,
+  primary key (auth_user_id),
+  FOREIGN KEY (userid,username)
+  REFERENCES appusers (userid,username)
+);
+
+CREATE TABLE authorities_master (
+  role_id bigserial not null ,
+  rolename text,
+  roleDesc text,
+  primary key (role_id)
 );
 
 
- CREATE TABLE authorities (
-  auth_id identity not null auto_increment,
-  username VARCHAR(256),
-  authority VARCHAR(256),
-  primary key (auth_id)
-);
-
+  
+  
   
   
 COMMIT;

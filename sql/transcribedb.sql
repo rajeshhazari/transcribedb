@@ -36,7 +36,7 @@ DROP TABLE IF EXISTS QRTZ_TRIGGERS;
 DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
 DROP TABLE IF EXISTS QRTZ_CALENDARS;
 DROP TABLE IF EXISTS APPUSERS CASCADE;
-DROP TABLE IF EXISTS authorities_user CASCADE;
+--DROP TABLE IF EXISTS authorities_user CASCADE;
 DROP TABLE IF EXISTS appusers_auth CASCADE;
 DROP TABLE IF EXISTS authorities_master cascade;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
@@ -276,20 +276,42 @@ ALTER TABLE APPUSERS ADD
 CONSTRAINT APPUSERS_USERNAME_EMAIL_KEY UNIQUE (userid,username,email);
 
 
-CREATE TABLE REGISTEREDAPPUSERS(
+
+
+CREATE TABLE APPUSERS_UPDATE_LOG(
+    id bigserial PRIMARY KEY,
+    operation         char(1)   NOT NULL,
+    user_id int not null,
+    username text not null,
+    email text not null,
+    password text,
+    first_name text,
+    lastName text,
+    phone_number text,
+    active boolean,
+    disabled boolean,
+    verified boolean,
+    locked boolean,
+    superuser boolean,
+    last_updated timestamp default CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
   id bigserial PRIMARY KEY,
   user_id int not null,
   username text not null,
-   email text not null,
-   last_loggedin timestamp default CURRENT_TIMESTAMP
+  email text not null,
+  token text,
+  last_loggedin timestamp default CURRENT_TIMESTAMP
 );
 
-ALTER TABLE REGISTEREDAPPUSERS ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
+ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
 
 CREATE TABLE authorities_master (
  id serial PRIMARY KEY ,
- rolename VARCHAR(10),
- roleDesc VARCHAR(100)
+ rolename VARCHAR(25),
+ roleDesc VARCHAR(400)
 );
 
 
@@ -348,10 +370,9 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   transcription_req_id text not null,
   transcribe_res_type text default 'application/json',
   file_name text not null,
-  session_id text not null,
-  userid  bigint,
+  session_id varchar(100) not null,
   transcribed boolean default false,
-  downloaded boolean default true,
+  downloaded boolean default false,
   transcribe_res_available_format text default 'application/json',
   transcribe_res_downloaded_format text default 'application/json',
   transcribed_date timestamp default CURRENT_TIMESTAMP,
@@ -370,15 +391,23 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
   ( user_id, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
   CREATE TABLE TRANSCRIBEFILELOG (
-  log_id bigserial PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   email text,
   file_name text,
-  session_id text,
-  transcribe_req_id  bigint,
-  transcribe_res_type text,
-  token text
+  log_id integer,
+  transcribe_res text,
+  file_size integer,
+  created_at timestamp DEFAULT now() NOT NULL,
+  FOREIGN KEY (log_id) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id)
 );
 
+
+
+--CREATE TRIGGER REGISTEREDAPPUSERS_ACTIVITY_LOG_trigger 
+--    AFTER INSERT ON APPUSERS   REFERENCING NEW TABLE AS X          FOR EACH ROW 
+    
+    
+    
   CREATE TABLE USER_SESSIONS (
   PRIMARY_ID CHAR(36) NOT NULL,
   SESSION_ID CHAR(36) NOT NULL,
@@ -574,6 +603,59 @@ END $$;
 CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE PROCEDURE last_updated();
 
 
+
+
+
+CREATE TABLE APPUSERS_UPDATE_LOG(
+    id bigserial PRIMARY KEY,
+    operation         char(1)   NOT NULL,
+    user_id int not null,
+    username text not null,
+    email text not null,
+    password text,
+    first_name text,
+    lastName text,
+    phone_number text,
+    active boolean,
+    disabled boolean,
+    verified boolean,
+    locked boolean,
+    superuser boolean,
+    last_updated timestamp default CURRENT_TIMESTAMP
+);
+
+--/
+CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
+AS $appusers_update_activity$
+    BEGIN   
+            IF (TG_OP = 'DELETE') THEN
+            INSERT INTO APPUSERS_UPDATE_LOG
+                SELECT 'D', o.* FROM old_table o;
+        ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO APPUSERS_UPDATE_LOG
+                SELECT 'U',  n.* FROM new_table n;
+        ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO APPUSERS_UPDATE_LOG
+                SELECT  'I',n.* FROM new_table n;
+        END IF;
+        RETURN NULL;
+    END $appusers_update_activity$ LANGUAGE plpgsql;
+/
+    
+CREATE TRIGGER APPUSERS_PROFILE_INS_LOG
+    AFTER INSERT ON APPUSERS
+    REFERENCING NEW TABLE AS new_table
+    FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
+CREATE TRIGGER APPUSERS_PROFILE_UPDATE_LOG
+    AFTER UPDATE ON APPUSERS
+    REFERENCING OLD TABLE AS old_table NEW TABLE AS new_table
+    FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
+CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
+    AFTER DELETE ON APPUSERS
+    REFERENCING OLD TABLE AS old_table
+    FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
+    
+    
 
 
 COMMIT;

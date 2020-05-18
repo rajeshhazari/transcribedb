@@ -2,7 +2,7 @@
   pipeline {
  agent {
      docker {
-         image 'postgres:alpine'
+         image 'postgres'
          customWorkspace "/opt/test"
          label 'transcribeapp_postgres-db'
 
@@ -37,15 +37,15 @@
        steps{
        echo " createDB: ${createDb}"
 
-       if(createDb){
+       if(Boolean.parseBoolean(createDb)){
              sh '''
                  docker ps -a
-                 docker run --name transcribeapp_pg-container-db  --rm -P -p 0.0.0.0:6432:5432 -v postgres-data:/media/apps4/postgres/data -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  -e POSTGRES_USER=${POSTGRES_USER}  -d postgres:alpine
+                 docker-compose -f postgres-db-compose.yml up -d
              '''
          } else {
              sh '''
-                 docker run --name transcribeapp_pg-container-db  --rm -P -p 0.0.0.0:6432:5432 -v postgres-data:/media/apps4/postgres/data -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -e POSTGRES_DB=${POSTGRES_DB}  -e POSTGRES_USER=${POSTGRES_USER}  -d postgres:alpine
-                 docker ps
+                 docker-compose -f postgres-db-compose.yml up -d
+                 docker ps 
                  docker container ls
              '''
          }

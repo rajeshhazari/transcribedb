@@ -137,7 +137,11 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
 
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$SUM9YNdIuC1RQLR4lyosdeolpq3iU/T72noOJQx4XFyclWHLxAh/C', true,'raj1','hazari1','rajesh_hazari@yahoo.com','27560');
-
+insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('devuser', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'devappuser','devapp','transcriibedevappuser@yahoo.com','27560');
+$2a$10$Hh/MlD1OcRo4xsXB4HfQBOjRr1/tLfNri4bFC2rd290z5gGTVOr7a
+update APPUSERS set password ='$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy' where email='rajesh_hazari@yahoo.com';
+select * from APPUSERS_UPDATE_LOG;
+select * from appusers where email='rajesh_hazari@yahoo.com'
 
 insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com',1);
 insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com',3);
@@ -145,17 +149,17 @@ insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','r
 
 
 
-
+drop table APPUSERS_UPDATE_LOG cascade;
 
 CREATE TABLE APPUSERS_UPDATE_LOG(
     id bigserial PRIMARY KEY,
-    operation         char(1)   NOT NULL,
-    user_id int not null,
+    operation   char(1)   NOT NULL,
+    userid int not null,
     username text not null,
     email text not null,
     password text,
     first_name text,
-    lastName text,
+    last_name text,
     phone_number text,
     active boolean,
     disabled boolean,
@@ -170,14 +174,14 @@ CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER
 AS $appusers_update_activity$
     BEGIN   
             IF (TG_OP = 'DELETE') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT 'D', o.* FROM old_table o;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'D',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser FROM old_table o;
         ELSIF (TG_OP = 'UPDATE') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT 'U',  n.* FROM new_table n;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'U',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser FROM old_table n;
         ELSIF (TG_OP = 'INSERT') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT  'I',n.* FROM new_table n;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'I',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser  FROM new_table n;
         END IF;
         RETURN NULL;
     END $appusers_update_activity$ LANGUAGE plpgsql;

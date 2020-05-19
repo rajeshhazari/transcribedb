@@ -608,13 +608,13 @@ CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE PROCED
 
 CREATE TABLE APPUSERS_UPDATE_LOG(
     id bigserial PRIMARY KEY,
-    operation         char(1)   NOT NULL,
-    user_id int not null,
+    operation   char(1)   NOT NULL,
+    userid int not null,
     username text not null,
     email text not null,
     password text,
     first_name text,
-    lastName text,
+    last_name text,
     phone_number text,
     active boolean,
     disabled boolean,
@@ -629,14 +629,14 @@ CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER
 AS $appusers_update_activity$
     BEGIN   
             IF (TG_OP = 'DELETE') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT 'D', o.* FROM old_table o;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'D',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser FROM old_table o;
         ELSIF (TG_OP = 'UPDATE') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT 'U',  n.* FROM new_table n;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'U',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser FROM old_table n;
         ELSIF (TG_OP = 'INSERT') THEN
-            INSERT INTO APPUSERS_UPDATE_LOG
-                SELECT  'I',n.* FROM new_table n;
+            INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
+                SELECT 'I',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser  FROM new_table n;
         END IF;
         RETURN NULL;
     END $appusers_update_activity$ LANGUAGE plpgsql;
@@ -654,7 +654,6 @@ CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
     AFTER DELETE ON APPUSERS
     REFERENCING OLD TABLE AS old_table
     FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
-    
     
 
 

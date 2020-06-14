@@ -3,6 +3,8 @@ services:
   postgres-dev:
     image: postgres
     restart: always
+    networks:
+      - transcribedb_default
     volumes:
       - postgres:/media/apps4/postgres/db:rw
     ports:

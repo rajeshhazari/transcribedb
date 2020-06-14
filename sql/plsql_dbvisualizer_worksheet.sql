@@ -55,12 +55,14 @@ select * from states_master;
 select * from authorities_master;
 desc table authorities_master
 alter table appusers_auth drop constraint appusers_auth_role_id_fkey;
-drop table authorities_master ;
-alter table authorities_master  alter column roledesc type varchar(400);
+drop table authorities_master cascade ;
+--alter table authorities_master  alter column roledesc type varchar(400);
 CREATE TABLE authorities_master (
  id serial PRIMARY KEY ,
- rolename VARCHAR(25),
- roleDesc VARCHAR(400)
+ role_id VARCHAR(50) unique,
+ roleDesc VARCHAR(400),
+ max_file_size int not null,
+ max_number_files int not null
 );
 
 
@@ -70,19 +72,28 @@ CREATE TABLE appusers_auth (
  userid bigserial ,
  username text,
  email text,
- role_id INTEGER,
+ role_id VARCHAR(50),
  updated_time timestamp default CURRENT_TIMESTAMP,
  primary key (auth_user_id),
- FOREIGN KEY (role_id)
- REFERENCES authorities_master (id)
+ FOREIGN KEY (role_id) REFERENCES authorities_master (role_id)
 );
 
 ALTER TABLE appusers_auth ADD CONSTRAINT FK_AUTHROTIES_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email);
+select * from authorities_master;
+delete from authorities_master;
 
-insert into authorities_master (rolename,roleDesc) values ('ROLE_BASIC_USER','Default role for any user, This supports limited file size transcription, fo ex: 20 mb and one file at a time, no batch transcribtion');
-insert into authorities_master (rolename,roledesc)  values ('ROLE_ADMIN','Default admin role for limited admin privileges, like new features released testing, unlimited tranribitions for sphin4x and deepspeech and unlimited file size and unlimited files');
-insert into authorities_master (rolename,roleDesc)  values ('ROLE_SUPER_ADMIN','Super admin role with complete auth, this will be mostly backend and complete access to all features, endpoints');
-insert into authorities_master (rolename,roleDesc)  values ('ROLE_PREMIUM_USER','Super role with complete transcription endpoints access like spinx4 transribtion with unlimited size, for ex at max 100MB(system limit), unlimited transcribtions at anytime, access to deepspeech transcribtions endpoints ');
+
+insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files) values ('ROLE_BASIC_USER','Default role for any user, This supports limited file size transcription, for ex: 20MB and 
+one file at a time, no batch transcribtion',20,0);
+insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files) values ('ROLE_ANONYMUS','Anonymus role for any user, This supports limited file size transcription, for ex: 20MB and 
+one file at a time, no batch 
+transcribtion. This Role can be used for users to explore or in beta testing.',20,100);
+insert into authorities_master (role_id,roledesc,max_file_size,max_number_files)  values ('ROLE_ADMIN','Default admin role for limited admin privileges, like new features released testing, unlimited 
+tranribtions for sphin4x and deepspeech and unlimited file size and unlimited files',0,0);
+insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files)  values ('ROLE_SUPER_ADMIN','Super admin role with complete auth, this will be mostly backend and complete access to 
+all features, endpoints',0,0);
+insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files)  values ('ROLE_PREMIUM_USER','Super role with complete transcription endpoints access like spinx4 transribtion with 
+unlimited size, for ex at max 100MB(system limit), unlimited transcribtions at anytime, access to deepspeech transcribtions endpoints ',0,0);
 
 
 
@@ -98,15 +109,15 @@ CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
 );
 
 ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
-
+select * from APPUSERS_TRANSCRIPTIONS;
 drop TABLE if exists APPUSERS_TRANSCRIPTIONS  cascade;
 
 CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   log_id bigserial PRIMARY KEY,
   username text not null,
-  user_id int not null,
+  userid integer,
   email text not null,
-  transcription_req_id text not null,
+  transcription_req_id bigint not null,
   transcribe_res_type text default 'application/json',
   file_name text not null,
   session_id varchar(100) not null,
@@ -118,37 +129,47 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   uploaded_date timestamp default CURRENT_TIMESTAMP
 );
 
-drop table if exists TABLE TRANSCRIBEFILELOG ;
+ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
+CONSTRAINT APPUSERS_TRANSCRIPTIONS_UNIQUE_KEY UNIQUE (log_id,transcription_req_id,email);
+
+drop table if exists TRANSCRIBEFILELOG ;
 CREATE TABLE TRANSCRIBEFILELOG (
-  id bigserial PRIMARY KEY,
+  tflog_id bigserial PRIMARY KEY,
   email text,
   file_name text,
   log_id integer,
+  transcription_req_id bigint,
   transcribe_res text,
   file_size integer,
   created_at timestamp DEFAULT now() NOT NULL,
-  FOREIGN KEY (log_id) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id)
+  FOREIGN KEY (log_id, transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
 );
 
 ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
-  ( user_id, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
+  ( userid, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
 
+
+select * from APPUSERS_TRANSCRIPTIONS;
+
+  delete from table APPUSERS cascade;
 
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
-insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$SUM9YNdIuC1RQLR4lyosdeolpq3iU/T72noOJQx4XFyclWHLxAh/C', true,'raj1','hazari1','rajesh_hazari@yahoo.com','27560');
+insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'rajesh','hazare','rajesh_hazari@yahoo.com','27560');
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('devuser', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'devappuser','devapp','transcriibedevappuser@yahoo.com','27560');
 $2a$10$Hh/MlD1OcRo4xsXB4HfQBOjRr1/tLfNri4bFC2rd290z5gGTVOr7a
-update APPUSERS set password ='$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy' where email='rajesh_hazari@yahoo.com';
+--update APPUSERS set password ='$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy' where email='rajesh_hazari@yahoo.com';
+--delete from table APPUSERS_UPDATE_LOG;
 select * from APPUSERS_UPDATE_LOG;
 select * from appusers where email='rajesh_hazari@yahoo.com'
 
-insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com',1);
-insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com',3);
+delete from appusers_auth;
+insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com','ROLE_BASIC_USER');
+insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_SUPER_ADMIN');
+insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_PREMIUM_USER');
 
-
-
-
+select * from appusers_auth;
+select * from authorities_master;
 drop table APPUSERS_UPDATE_LOG cascade;
 
 CREATE TABLE APPUSERS_UPDATE_LOG(
@@ -169,6 +190,7 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
     last_updated timestamp default CURRENT_TIMESTAMP
 );
 
+select * from APPUSERS_UPDATE_LOG;
 --/
 CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
 AS $appusers_update_activity$
@@ -208,14 +230,16 @@ select * from APPUSERS_TRANSCRIPTIONS;
 
 drop TABLE if exists TRANSCRIBEFILELOG ;
   CREATE TABLE TRANSCRIBEFILELOG (
-  id bigserial PRIMARY KEY,
+  tflog_id bigserial PRIMARY KEY,
   email text,
   file_name text,
-  log_id integer,
+  log_id bigint,
+  transcription_req_id bigint,
   transcribe_res text,
   file_size integer,
+  session_id VARCHAR(256),
   created_at timestamp DEFAULT now() NOT NULL,
-  FOREIGN KEY (id) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id)
+  FOREIGN KEY (log_id,transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
 );
 
 select * from TRANSCRIBEFILELOG;
@@ -231,4 +255,28 @@ insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size
 insert into appusers_auth (userid,usename,email,role_id)  values (1,rajeshhazari,rajeshhazari@gmail.com,1)
 
 
-commit;
+CREATE TABLE CUSTOMERCONTACTMESSAGES (
+  id  bigserial PRIMARY KEY,
+  email VARCHAR(100),
+  firstName VARCHAR(100),
+  lastName VARCHAR(100),
+  message text,
+  created_at timestamp DEFAULT now() NOT NULL
+  );
+  
+  DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
+  CREATE TABLE USERREGVERIFYLOGDETAILS (
+  id bigserial PRIMARY KEY,
+  username text not null,
+  email text not null UNIQUE,
+  disabled boolean default false,
+  verified boolean default false,
+  confEmailUrl text not null,
+  verifiedRegClientIp text ,
+  verificationEmailSent boolean default false,
+  confEmailToken text not null UNIQUE,
+  emailSentDate  timestamp default CURRENT_TIMESTAMP,
+  verificationDate timestamp not null
+);
+
+

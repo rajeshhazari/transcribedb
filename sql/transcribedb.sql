@@ -40,6 +40,7 @@ DROP TABLE IF EXISTS APPUSERS CASCADE;
 DROP TABLE IF EXISTS appusers_auth CASCADE;
 DROP TABLE IF EXISTS authorities_master cascade;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
+DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
 DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
 DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS CASCADE;
 DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
@@ -61,6 +62,9 @@ DROP TABLE IF EXISTS payment CASCADE;
 DROP SEQUENCE IF EXISTS payment_payment_id_seq;
 DROP TABLE  IF EXISTS  SPRING_SESSION CASCADE;
 DROP TABLE IF EXISTS SPRING_SESSION_ATTRIBUTES CASCADE;
+
+drop TABLE CUSTOMER_contact_messages IF EXISTS;
+
 
 CREATE TABLE QRTZ_JOB_DETAILS
 (
@@ -297,21 +301,40 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
 );
 
 
+
+
+
 CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
   id bigserial PRIMARY KEY,
   user_id int not null,
   username text not null,
   email text not null,
   token text,
-  last_loggedin timestamp default CURRENT_TIMESTAMP
+   last_loggedin timestamp default CURRENT_TIMESTAMP
 );
 
 ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
 
+
+CREATE TABLE REGISTEREDAPPUSERS(
+  id identity not null auto_increment,
+  username VARCHAR(100) not null,
+   email VARCHAR(100) not null,
+   confToken VARCHAR(100) not null,
+   confEmail VARCHAR(500) not null,
+  primary key (id),
+  CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (username,email) references APPUSERS(username,email)
+);
+
+
+
+
 CREATE TABLE authorities_master (
  id serial PRIMARY KEY ,
- rolename VARCHAR(25),
- roleDesc VARCHAR(400)
+ role_id VARCHAR(50) unique,
+ roleDesc VARCHAR(400),
+ max_file_size int not null,
+ max_number_files int not null
 );
 
 
@@ -321,28 +344,34 @@ CREATE TABLE appusers_auth (
  userid bigserial ,
  username text,
  email text,
- role_id INTEGER,
+ role_id VARCHAR(50),
  updated_time timestamp default CURRENT_TIMESTAMP,
  primary key (auth_user_id),
- FOREIGN KEY (role_id)
- REFERENCES authorities_master (id)
+ FOREIGN KEY (role_id) REFERENCES authorities_master (role_id)
 );
+
 
 ALTER TABLE appusers_auth ADD CONSTRAINT FK_AUTHROTIES_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email);
 
 
-CREATE TABLE USERREGVERIFYLOGDETIALS (
+CREATE TABLE USERREGVERIFYLOGDETAILS (
   id bigserial PRIMARY KEY,
   username text not null,
+  email text not null UNIQUE,
+  code bigint not null,
   disabled boolean default false,
   verified boolean default false,
-  verification_email_to text not null,
-  verified_reg_ip text ,
-  verification_email_sent boolean default false,
-  verification_email_code text not null,
-  email_sent_date  timestamp default CURRENT_TIMESTAMP,
-  verfication_date timestamp
+  confEmailUrl text not null,
+  verifiedRegClientIp text ,
+  verificationEmailSent boolean default false,
+  confEmailToken text not null UNIQUE,
+  emailSentDate  timestamp default CURRENT_TIMESTAMP,
+  verificationDate timestamp not null
 );
+
+
+
+--ALTER TABLE USERREGVERIFYLOGDETIALS ADD CONSTRAINT FK_REGUSERS_USERREGVERIFYLOGDETIALS_EMAIL foreign key (username,email) references APPUSERS(username,email)
 
 CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   id bigserial PRIMARY KEY,
@@ -365,9 +394,9 @@ CREATE TABLE USERREGISTRATIONSLOGDETIALS (
 CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   log_id bigserial PRIMARY KEY,
   username text not null,
-  user_id int not null,
+  userid integer,
   email text not null,
-  transcription_req_id text not null,
+  transcription_req_id bigint not null,
   transcribe_res_type text default 'application/json',
   file_name text not null,
   session_id varchar(100) not null,
@@ -378,6 +407,8 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   transcribed_date timestamp default CURRENT_TIMESTAMP,
   uploaded_date timestamp default CURRENT_TIMESTAMP
 );
+ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
+CONSTRAINT APPUSERS_TRANSCRIPTIONS_UNIQUE_KEY UNIQUE (log_id,transcription_req_id,email);
 
 
 --CREATE TABLE UsersTranscriptionsDetails (
@@ -390,17 +421,19 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
 ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
   ( user_id, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
+  
   CREATE TABLE TRANSCRIBEFILELOG (
-  id bigserial PRIMARY KEY,
+  tflog_id bigserial PRIMARY KEY,
   email text,
   file_name text,
-  log_id integer,
+  log_id bigint,
+  transcription_req_id bigint,
   transcribe_res text,
   file_size integer,
+  session_id VARCHAR(256),
   created_at timestamp DEFAULT now() NOT NULL,
-  FOREIGN KEY (log_id) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id)
+  FOREIGN KEY (log_id,transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
 );
-
 
 
 --CREATE TRIGGER REGISTEREDAPPUSERS_ACTIVITY_LOG_trigger 
@@ -419,12 +452,18 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
   CONSTRAINT USER_SESSIONS_PK PRIMARY KEY (PRIMARY_ID)
 );
 
-CREATE TABLE CUSTOMER_contact_messages(
+
+
+CREATE TABLE CUSTOMERCONTACTMESSAGES (
   id  bigserial PRIMARY KEY,
-  created_at timestamp DEFAULT now() NOT NULL,
-  message_body   text,
-  email text
-);
+  email VARCHAR(100),
+  firstName VARCHAR(100),
+  lastName VARCHAR(100),
+  message text,
+  created_at timestamp DEFAULT now() NOT NULL
+  );
+  
+
 
 
 
@@ -551,13 +590,6 @@ ALTER TABLE payment  ADD CONSTRAINT payment_pkey UNIQUE (payment_id, payment_dat
 
 
 
-
-
-
-
-
-
-
 CREATE TABLE SPRING_SESSION (
 	PRIMARY_ID CHAR(36) NOT NULL,
 	SESSION_ID CHAR(36) NOT NULL,
@@ -605,6 +637,7 @@ CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE PROCED
 
 
 
+drop table APPUSERS_UPDATE_LOG cascade;
 
 CREATE TABLE APPUSERS_UPDATE_LOG(
     id bigserial PRIMARY KEY,
@@ -625,6 +658,7 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
 );
 
 --/
+
 CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
 AS $appusers_update_activity$
     BEGIN   
@@ -655,6 +689,8 @@ CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
     REFERENCING OLD TABLE AS old_table
     FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
     
-
+    
+    
+    
 
 COMMIT;

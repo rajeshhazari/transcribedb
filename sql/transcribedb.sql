@@ -657,6 +657,24 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
     last_updated timestamp default CURRENT_TIMESTAMP
 );
 
+
+CREATE TABLE USERREGVERIFYLOGDETAILS (
+  id bigserial PRIMARY KEY,
+  username text not null,
+  email text not null UNIQUE,
+  disabled boolean default false,
+  verified boolean default false,
+  confEmailUrl text not null,
+  verifiedRegClientIp text ,
+  verificationEmailSent boolean default false,
+  confEmailToken text not null UNIQUE,
+  emailSentDate  timestamp default CURRENT_TIMESTAMP,
+  verificationDate timestamp not null
+);
+
+
+
+
 --/
 
 CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 

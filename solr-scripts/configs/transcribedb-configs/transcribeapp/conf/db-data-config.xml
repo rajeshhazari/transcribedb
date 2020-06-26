@@ -1,0 +1,276 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License\n ,Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing\n ,software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND\n ,either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<dataConfig>
+
+  <dataSource name ="postgresDB" type="JdbcDataSource" driver="org.postgresql.Driver" 
+				url="jdbc:postgresql://10.16.19.85:5432/MDDB" 
+				user="mddbuser" password="admin111" readOnly="true"  
+				transactionIsolation="TRANSACTION_READ_COMMITTED" />
+ 
+
+  <document name="episodes" id="guid" >
+ 
+
+    <entity  dataSource="postgresDB" name="episodesFuture"  query=" 
+	select 'future' || cut_guid cut_guid,ch.channel_id channel_channelId,ch.channel_guid channel_GUID,ch.channel_name channel_name,ch.sirius_channel_number channel_number,ch.channel_long_description channel_longDescription,category_key  channel_content_type\n ,ch.channel_description channel_description,
+sh.show_long_title M_shows_asset_longTitle,sh.show_long_description M_shows_asset_longDescription,sh.show_guid M_shows_asset_assetGUID,
+ep.episode_guid M_episodes_asset_assetGUID,episode_long_title M_episodes_asset_longTitle,episode_long_description M_episodes_asset_longDescription,$$ $$ episode_host_name,$$ $$ episode_guest_name,ev.duration M_episodes_duration,es.episode_start_time M_episodes_timestamp,es.episode_is_hot M_episodes_asset_hot\n ,es.episode_is_hot M_episodes_asset_valuable,
+       es.episode_is_hot M_episodes_asset_featured\n ,es.episode_is_hot M_episodes_asset_highlighted,
+sg.segment_short_id M_segments_asset_legacyIds_shortid,segment_long_description M_segments_asset_legacyIds_longDescription,$$Future$$  context_domain,
+cut_title M_cuts_asset_title,cut_composer M_cuts_asset_composer,cut_sxm_id M_cuts_asset_legacyIds_siriusXMid,cut_pid M_cuts_asset_legacyids_pid,album M_cuts_asset_album,cut_artist M_cuts_asset_artist_name,ct.cut_start_time M_cuts_asset_timestamp,
+$$ $$  M_cuts_asset_artist_guid,$$ $$  M_cuts_asset_rating,ct.drm_id M_cuts_asset_drmInfo\n ,category_name channel_category,
+super_category_name channel_superCategory 
+from k2.cut ct
+JOIN k2.segment sg ON ct.channel_id = sg.channel_id AND ct.cut_start_time >= sg.segment_start_time AND ct.cut_start_time &lt;= sg.segment_start_time + CAST((SELECT ksg.segment_duration || $$  seconds$$  FROM k2.segment ksg        WHERE ksg.segment_guid = sg.segment_guid) AS INTERVAL)  
+JOIN k2.episode_schedule es ON ct.channel_id = es.channel_id
+JOIN k2.episode_version ev ON es.episode_version_guid = ev.episode_version_guid
+JOIN k2.episode ep ON ev.episode_guid = ep.episode_guid
+JOIN k2.show sh ON ev.show_guid = sh.show_guid
+JOIN k2.channel ch ON ct.channel_id = ch.channel_id
+JOIN k2.channel_category cc ON cc.channel_id = ch.channel_id
+JOIN k2.category_super_category csc ON csc.category_guid = cc.category_guid
+JOIN k2.category cat On cat.category_guid = csc.category_guid
+JOIN k2.super_category scat ON scat.super_category_guid = csc.super_category_guid
+where ct.content_domain_id = 8 and cut_start_time > $$ 2014-04-02 10:00:00$$  AND cut_start_time &lt; $$ 2014-04-02 15:00:00$$  
+AND ct.cut_start_time BETWEEN es.episode_start_time
+        AND es.episode_start_time + CAST((SELECT kev.duration || $$  seconds$$  FROM k2.episode_version kev
+        WHERE kev.episode_version_guid = ev.episode_version_guid) AS INTERVAL)   
+GROUP BY 
+    cut_guid,ch.channel_id,ch.channel_guid,ch.channel_name,ch.sirius_channel_number,ch.channel_long_description\n ,
+    sh.show_long_title,sh.show_long_description,sh.show_guid ,	ep.episode_guid,episode_long_title,episode_long_description,ev.duration,es.episode_start_time,es.episode_is_hot,sg.segment_short_id ,segment_long_description ,cut_title,cut_composer,cut_sxm_id,cut_pid,album,cut_artist,cut_start_time,
+		cut_start_time,category_key,category_name,super_category_name "
+	
+	transformer="LogTransformer"
+        logTemplate="Future - The cut guid is ${episodesFuture.cut_guid} and episode guid is {episodesFuture.M_episodes_asset_assetGUID}" logLevel="debug"
+		
+	>
+	
+      <field column="cut_guid" name="guid" />
+	  <field column="context_domain" name="context_domain" />
+	   <field column="M_episodes_asset_longTitle" name="M_episodes_asset_longTitle" />
+	    <field column="M_episodes_asset_longDescription" name="M_episodes_asset_longDescription" />
+		<field column="M_episodes_duration" name="M_episodes_duration" />
+		<field column="M_episodes_asset_host_name" name="M_episodes_asset_host_name" />
+		<field column="M_episodes_asset_guest_name" name="M_episodes_asset_guest_name" />
+		<field column="M_episodes_asset_entitiesHuman" name="M_episodes_asset_entitiesHuman" />
+		<field column="M_episodes_asset_topicsHuman" name="M_episodes_asset_topicsHuman" />
+		<field column="M_episodes_asset_keywordsHuman" name="M_episodes_asset_keywordsHuman" />
+		<field column="M_episodes_asset_entitiesMachine" name="M_episodes_asset_entitiesMachine" />
+		<field column="M_episodes_asset_topicsMachine" name="M_episodes_asset_topicsMachine" />
+		<field column="M_episodes_asset_hot" name="M_episodes_asset_hot" />
+		<field column="M_episodes_asset_valuable" name="M_episodes_asset_valuable" />
+		<field column="M_episodes_asset_featured" name="M_episodes_asset_featured" />
+		<field column="M_episodes_asset_highlighted" name="M_episodes_asset_highlighted" />
+		<field column="M_episodes_asset_assetGUID" name="M_episodes_asset_assetGUID" />
+		<field column="M_cuts_asset_artist_name" name="M_cuts_asset_artist_name" />
+		<field column="M_cuts_asset_title" name="M_cuts_asset_title" />
+		<field column="M_cuts_asset_artist_guid" name="M_cuts_asset_artist_guid" />
+		<field column="M_cuts_asset_album" name="M_cuts_asset_album" />
+		<field column="M_cuts_asset_composer" name="M_cuts_asset_composer" />
+		<field column="M_cuts_asset_legacyids_pid" name="M_cuts_asset_legacyids_pid" />
+		<field column="M_cuts_asset_externalIds" name="M_cuts_asset_externalIds" />
+		<field column="M_cuts_asset_timestamp" name="M_cuts_asset_timestamp" />
+		<field column="M_cuts_asset_rating" name="M_cuts_asset_rating" />
+		<field column="M_cuts_asset_drmInfo" name="M_cuts_asset_drmInfo" />
+		<field column="M_segments_asset_legacyIds_shortid" name="M_segments_asset_legacyIds_shortid" />
+		<field column="M_segments_asset_legacyIds_longDescription" name="M_segments_asset_legacyIds_longDescription" />
+		<field column="channel_channelId" name="channel_channelId" />
+		<field column="channel_GUID" name="channel_GUID" />
+		<field column="channel_name" name="channel_name" />
+		<field column="channel_number" name="channel_number" />
+		<field column="channel_longDescription" name="channel_longDescription" />
+		<field column="channel_content_type" name="channel_content_type" />
+		<field column="channel_description" name="channel_description" />
+		<field column="channel_category" name="channel_category" />
+		<field column="channel_superCategory" name="channel_superCategory" />
+		<field column="M_shows_asset_longTitle" name="M_shows_asset_longTitle" />
+		<field column="M_shows_asset_longDescription" name="M_shows_asset_longDescription" />
+		<field column="M_shows_asset_assetGUID" name="M_shows_asset_assetGUID" />
+		<field column="M_cuts_asset_legacyIds_siriusXMid" name="M_cuts_asset_legacyIds_siriusXMid" />
+	  
+	  </entity>	 
+
+	  
+<entity  dataSource="postgresDB" name="episodesAOD"  query="
+select 'AOD-' || cut_guid cut_guid,ch.channel_id channel_channelId,ch.channel_guid channel_GUID,ch.channel_name channel_name,ch.sirius_channel_number channel_number,ch.channel_long_description channel_longDescription,category_key  channel_content_type\n ,ch.channel_description channel_description,
+sh.show_long_title M_shows_asset_longTitle,sh.show_long_description M_shows_asset_longDescription,sh.show_guid M_shows_asset_assetGUID,ep.episode_guid M_episodes_asset_assetGUID,
+episode_long_title M_episodes_asset_longTitle,episode_long_description M_episodes_asset_longDescription,$$ $$  M_episodes_asset_host_name,$$ $$ M_episodes_asset_guest_name,ev.duration M_episodes_duration,es.aod_start_time M_episodes_timestamp,
+false M_episodes_asset_hot\n ,false M_episodes_asset_valuable,false M_episodes_asset_featured\n ,false M_episodes_asset_highlighted,
+sg.segment_short_id M_segments_asset_legacyIds_shortid,segment_long_description M_segments_asset_legacyIds_longDescription,$$AOD$$  context_domain,
+cut_title M_cuts_asset_title,cut_composer M_cuts_asset_composer,cut_sxm_id M_cuts_asset_legacyIds_siriusXMid,cut_pid M_cuts_asset_legacyids_pid,album M_cuts_asset_album,cut_artist M_cuts_asset_artist_name,ct.cut_start_time M_cuts_asset_timestamp ,
+$$ $$  M_cuts_asset_artist_guid,$$ $$  M_cuts_asset_rating,ct.drm_id M_cuts_asset_drmInfo,
+ category_name channel_category,super_category_name channel_superCategory
+from k2.cut ct
+JOIN k2.aod_catalog es ON ct.episode_version_guid = es.episode_version_guid
+JOIN k2.segment sg ON es.episode_version_guid = sg.episode_version_guid
+JOIN k2.episode_version ev ON es.episode_version_guid = ev.episode_version_guid
+JOIN k2.episode ep ON ev.episode_guid = ep.episode_guid
+JOIN k2.show sh ON ev.show_guid = sh.show_guid
+JOIN k2.channel ch ON ct.channel_id = ch.channel_id
+JOIN k2.channel_category cc ON cc.channel_id = ch.channel_id
+JOIN k2.category_super_category csc ON csc.category_guid = cc.category_guid
+JOIN k2.category cat On cat.category_guid = csc.category_guid
+JOIN k2.super_category scat ON scat.super_category_guid = csc.super_category_guid
+where ct.content_domain_id = 3 AND sg.content_domain_id = 3
+    AND ct.cut_start_time > sg.segment_start_time
+    AND ct.cut_start_time &lt; (sg.segment_start_time + CAST(segment_duration || $$  seconds$$  AS INTERVAL))
+GROUP BY 
+    cut_guid,ch.channel_id,ch.channel_guid,ch.channel_name,ch.sirius_channel_number,ch.channel_long_description\n ,
+    sh.show_long_title,sh.show_long_description,sh.show_guid,ep.episode_guid,
+    episode_long_title,episode_long_description,ev.duration,es.aod_start_time,
+    sg.segment_short_id,segment_long_description,cut_title,cut_composer,cut_sxm_id,cut_pid,album,cut_artist,cut_start_time,
+	cut_start_time,category_key,category_name,super_category_name
+	"
+	transformer="LogTransformer"
+        logTemplate="The cut guid is ${episodesAOD.cut_guid} and episode guid is {episodesAOD.M_episodes_asset_assetGUID}" logLevel="debug"
+	>
+      <field column="cut_guid" name="guid" />
+	  <field column="context_domain" name="context_domain" />
+	   <field column="M_episodes_asset_longTitle" name="M_episodes_asset_longTitle" />
+	    <field column="M_episodes_asset_longDescription" name="M_episodes_asset_longDescription" />
+		<field column="M_episodes_duration" name="M_episodes_duration" />
+		<field column="M_episodes_asset_host_name" name="M_episodes_asset_host_name" />
+		<field column="M_episodes_asset_guest_name" name="M_episodes_asset_guest_name" />
+		<field column="M_episodes_asset_entitiesHuman" name="M_episodes_asset_entitiesHuman" />
+		<field column="M_episodes_asset_topicsHuman" name="M_episodes_asset_topicsHuman" />
+		<field column="M_episodes_asset_keywordsHuman" name="M_episodes_asset_keywordsHuman" />
+		<field column="M_episodes_asset_entitiesMachine" name="M_episodes_asset_entitiesMachine" />
+		<field column="M_episodes_asset_topicsMachine" name="M_episodes_asset_topicsMachine" />
+		<field column="M_episodes_asset_hot" name="M_episodes_asset_hot" />
+		<field column="M_episodes_asset_valuable" name="M_episodes_asset_valuable" />
+		<field column="M_episodes_asset_featured" name="M_episodes_asset_featured" />
+		<field column="M_episodes_asset_highlighted" name="M_episodes_asset_highlighted" />
+		<field column="M_episodes_asset_assetGUID" name="M_episodes_asset_assetGUID" />
+		<field column="M_cuts_asset_artist_name" name="M_cuts_asset_artist_name" />
+		<field column="M_cuts_asset_title" name="M_cuts_asset_title" />
+		<field column="M_cuts_asset_artist_guid" name="M_cuts_asset_artist_guid" />
+		<field column="M_cuts_asset_album" name="M_cuts_asset_album" />
+		<field column="M_cuts_asset_composer" name="M_cuts_asset_composer" />
+		<field column="M_cuts_asset_legacyids_pid" name="M_cuts_asset_legacyids_pid" />
+		<field column="M_cuts_asset_externalIds" name="M_cuts_asset_externalIds" />
+		<field column="M_cuts_asset_timestamp" name="M_cuts_asset_timestamp" />
+		<field column="M_cuts_asset_rating" name="M_cuts_asset_rating" />
+		<field column="M_cuts_asset_drmInfo" name="M_cuts_asset_drmInfo" />
+		<field column="M_segments_asset_legacyIds_shortid" name="M_segments_asset_legacyIds_shortid" />
+		<field column="M_segments_asset_legacyIds_longDescription" name="M_segments_asset_legacyIds_longDescription" />
+		<field column="channel_channelId" name="channel_channelId" />
+		<field column="channel_GUID" name="channel_GUID" />
+		<field column="channel_name" name="channel_name" />
+		<field column="channel_number" name="channel_number" />
+		<field column="channel_longDescription" name="channel_longDescription" />
+		<field column="channel_content_type" name="channel_content_type" />
+		<field column="channel_description" name="channel_description" />
+		<field column="channel_category" name="channel_category" />
+		<field column="channel_superCategory" name="channel_superCategory" />
+		<field column="M_shows_asset_longTitle" name="M_shows_asset_longTitle" />
+		<field column="M_shows_asset_longDescription" name="M_shows_asset_longDescription" />
+		<field column="M_shows_asset_assetGUID" name="M_shows_asset_assetGUID" />
+		<field column="M_cuts_asset_legacyIds_siriusXMid" name="M_cuts_asset_legacyIds_siriusXMid" />
+	  
+	  </entity>	
+	  
+	  <entity  dataSource="postgresDB" name="episodesLive"  query="
+select 'live-' || cut_guid cut_guid,ch.channel_id channel_channelId,ch.channel_guid channel_GUID,ch.channel_name channel_name,ch.sirius_channel_number channel_number,ch.channel_long_description channel_longDescription,category_key  channel_content_type\n ,ch.channel_description channel_description,
+sh.show_long_title M_shows_asset_longTitle,sh.show_long_description M_shows_asset_longDescription,sh.show_guid M_shows_asset_assetGUID,
+ep.episode_guid M_episodes_asset_assetGUID,episode_long_title M_episodes_asset_longTitle,episode_long_description M_episodes_asset_longDescription,$$ $$ episode_host_name,$$ $$ episode_guest_name,ev.duration M_episodes_duration,es.episode_start_time M_episodes_timestamp,es.episode_is_hot M_episodes_asset_hot\n ,es.episode_is_hot M_episodes_asset_valuable,
+       es.episode_is_hot M_episodes_asset_featured\n ,es.episode_is_hot M_episodes_asset_highlighted,
+sg.segment_short_id M_segments_asset_legacyIds_shortid,segment_long_description M_segments_asset_legacyIds_longDescription,$$Live$$  context_domain,
+cut_title M_cuts_asset_title,cut_composer M_cuts_asset_composer,cut_sxm_id M_cuts_asset_legacyIds_siriusXMid,cut_pid M_cuts_asset_legacyids_pid,album M_cuts_asset_album,cut_artist M_cuts_asset_artist_name,ct.cut_start_time M_cuts_asset_timestamp,
+$$ $$  M_cuts_asset_artist_guid,$$ $$  M_cuts_asset_rating,ct.drm_id M_cuts_asset_drmInfo ,
+category_name channel_category,super_category_name channel_superCategory
+from k2.cut ct
+JOIN k2.segment sg ON ct.channel_id = sg.channel_id AND ct.cut_start_time >= sg.segment_start_time 
+AND ct.cut_start_time &lt;= sg.segment_start_time + CAST((SELECT ksg.segment_duration || $$  seconds$$  FROM k2.segment ksg
+        WHERE ksg.segment_guid = sg.segment_guid) AS INTERVAL)  
+JOIN k2.episode_schedule es ON ct.channel_id = es.channel_id
+JOIN k2.episode_version ev ON es.episode_version_guid = ev.episode_version_guid
+JOIN k2.episode ep ON ev.episode_guid = ep.episode_guid
+JOIN k2.show sh ON ev.show_guid = sh.show_guid
+JOIN k2.channel ch ON ct.channel_id = ch.channel_id
+JOIN k2.channel_category cc ON cc.channel_id = ch.channel_id
+JOIN k2.category_super_category csc ON csc.category_guid = cc.category_guid
+JOIN k2.category cat On cat.category_guid = csc.category_guid
+JOIN k2.super_category scat ON scat.super_category_guid = csc.super_category_guid
+where ct.content_domain_id = 4 and ct.cut_start_time > $$ 2014-04-01 15:05:12.0$$  AND ct.cut_start_time &lt; $$ 2014-04-01 20:05:12.0$$ 
+AND ct.cut_start_time BETWEEN es.episode_start_time
+        AND es.episode_start_time + CAST((SELECT kev.duration || $$  seconds$$  FROM k2.episode_version kev
+        WHERE kev.episode_version_guid = ev.episode_version_guid) AS INTERVAL)  
+GROUP BY 
+    cut_guid,ch.channel_id,ch.channel_guid,ch.channel_name,ch.sirius_channel_number,ch.channel_long_description\n ,
+    sh.show_long_title,sh.show_long_description,sh.show_guid,ep.episode_guid,
+    episode_long_title,episode_long_description,ev.duration,es.episode_start_time,es.episode_is_hot\n ,sg.segment_short_id,segment_long_description,cut_title,cut_composer,cut_sxm_id,cut_pid,album,cut_artist,cut_start_time,
+	cut_start_time,category_key,category_name,super_category_name	"
+	transformer="LogTransformer"
+        logTemplate="LIVE - The cut guid is ${episodesLive.cut_guid} and episode guid is {episodesLive.M_episodes_asset_assetGUID}" logLevel="debug"
+	>
+	
+      <field column="cut_guid" name="guid" />
+	  <field column="context_domain" name="context_domain" />
+	   <field column="M_episodes_asset_longTitle" name="M_episodes_asset_longTitle" />
+	    <field column="M_episodes_asset_longDescription" name="M_episodes_asset_longDescription" />
+		<field column="M_episodes_duration" name="M_episodes_duration" />
+		<field column="M_episodes_asset_host_name" name="M_episodes_asset_host_name" />
+		<field column="M_episodes_asset_guest_name" name="M_episodes_asset_guest_name" />
+		<field column="M_episodes_asset_entitiesHuman" name="M_episodes_asset_entitiesHuman" />
+		<field column="M_episodes_asset_topicsHuman" name="M_episodes_asset_topicsHuman" />
+		<field column="M_episodes_asset_keywordsHuman" name="M_episodes_asset_keywordsHuman" />
+		<field column="M_episodes_asset_entitiesMachine" name="M_episodes_asset_entitiesMachine" />
+		<field column="M_episodes_asset_topicsMachine" name="M_episodes_asset_topicsMachine" />
+		<field column="M_episodes_asset_hot" name="M_episodes_asset_hot" />
+		<field column="M_episodes_asset_valuable" name="M_episodes_asset_valuable" />
+		<field column="M_episodes_asset_featured" name="M_episodes_asset_featured" />
+		<field column="M_episodes_asset_highlighted" name="M_episodes_asset_highlighted" />
+		<field column="M_episodes_asset_assetGUID" name="M_episodes_asset_assetGUID" />
+		<field column="M_cuts_asset_artist_name" name="M_cuts_asset_artist_name" />
+		<field column="M_cuts_asset_title" name="M_cuts_asset_title" />
+		<field column="M_cuts_asset_artist_guid" name="M_cuts_asset_artist_guid" />
+		<field column="M_cuts_asset_album" name="M_cuts_asset_album" />
+		<field column="M_cuts_asset_composer" name="M_cuts_asset_composer" />
+		<field column="M_cuts_asset_legacyids_pid" name="M_cuts_asset_legacyids_pid" />
+		<field column="M_cuts_asset_externalIds" name="M_cuts_asset_externalIds" />
+		<field column="M_cuts_asset_timestamp" name="M_cuts_asset_timestamp" />
+		<field column="M_cuts_asset_rating" name="M_cuts_asset_rating" />
+		<field column="M_cuts_asset_drmInfo" name="M_cuts_asset_drmInfo" />
+		<field column="M_segments_asset_legacyIds_shortid" name="M_segments_asset_legacyIds_shortid" />
+		<field column="M_segments_asset_legacyIds_longDescription" name="M_segments_asset_legacyIds_longDescription" />
+		<field column="channel_channelId" name="channel_channelId" />
+		<field column="channel_GUID" name="channel_GUID" />
+		<field column="channel_name" name="channel_name" />
+		<field column="channel_number" name="channel_number" />
+		<field column="channel_longDescription" name="channel_longDescription" />
+		<field column="channel_content_type" name="channel_content_type" />
+		<field column="channel_description" name="channel_description" />
+		<field column="channel_category" name="channel_category" />
+		<field column="channel_superCategory" name="channel_superCategory" />
+		<field column="M_shows_asset_longTitle" name="M_shows_asset_longTitle" />
+		<field column="M_shows_asset_longDescription" name="M_shows_asset_longDescription" />
+		<field column="M_shows_asset_assetGUID" name="M_shows_asset_assetGUID" />
+		<field column="M_cuts_asset_legacyIds_siriusXMid" name="M_cuts_asset_legacyIds_siriusXMid" />
+	  
+	  </entity>	 
+	  
+	  
+	  
+</document>	  
+
+
+  
+
+</dataConfig>
+
+

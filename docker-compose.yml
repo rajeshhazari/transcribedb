@@ -14,6 +14,46 @@ services:
       POSTGRES_USER: devuser
       POSTGRES_DB: transcribeapp_db
       PGDATA: /media/apps4/postgres/db
+  
+  solr-dev:
+    images: transcribe-solr:8.3
+    container_name: solr-dev
+    restart: always
+    networks: dbnet
+    ports:
+      - 8983:8983
+    volumes:
+      - /opt/solr/:/opt/solr/:rw
+      - /opt/apps/configs/:/opt/apps/config:rw
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr
+      - start
+      - -f
+      - -c
+      - -z
+      - zoo-dev1:2181
+      - -a
+      - "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044"
+    environment:
+      SOLR_STOP_KEY: solr-dev
+    depends_on:
+      - zoo-node1
+   
+   
+   zoo-node1:
+        image: zookeeper:3.5
+        container_name: zoo-dev1
+        restart: always
+        hostname: zoo-dev1
+        ports:
+        - 2181:2181
+        environment:
+        ZOO_MY_ID: 1
+        #ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+        ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+        networks: dbnet
+    
 networks:
   dbnet:
     driver: bridge

@@ -89,7 +89,9 @@ insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files)
 one file at a time, no batch 
 transcribtion. This Role can be used for users to explore or in beta testing.',20,100);
 insert into authorities_master (role_id,roledesc,max_file_size,max_number_files)  values ('ROLE_ADMIN','Default admin role for limited admin privileges, like new features released testing, unlimited 
-tranribtions for sphin4x and deepspeech and unlimited file size and unlimited files',0,0);
+transcribtions for sphin4x and deepspeech and unlimited file size and unlimited files',0,0);
+insert into authorities_master (role_id,roledesc,max_file_size,max_number_files)  values ('ROLE_DEVOPS','Default devops role with  unlimited admin privileges, like new features released testing, 
+unlimited  transcribtions for sphin4x and deepspeech and unlimited file size and unlimited files',0,0);
 insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files)  values ('ROLE_SUPER_ADMIN','Super admin role with complete auth, this will be mostly backend and complete access to 
 all features, endpoints',0,0);
 insert into authorities_master (role_id,roleDesc,max_file_size,max_number_files)  values ('ROLE_PREMIUM_USER','Super role with complete transcription endpoints access like spinx4 transribtion with 
@@ -156,8 +158,8 @@ select * from APPUSERS_TRANSCRIPTIONS;
 
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'rajesh','hazare','rajesh_hazari@yahoo.com','27560');
-insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('devuser', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'devappuser','devapp','transcriibedevappuser@yahoo.com','27560');
-$2a$10$Hh/MlD1OcRo4xsXB4HfQBOjRr1/tLfNri4bFC2rd290z5gGTVOr7a
+insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('devuser', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'devappuser','devapp','transcribedevappuser@yahoo.com','27560');
+--$2a$10$Hh/MlD1OcRo4xsXB4HfQBOjRr1/tLfNri4bFC2rd290z5gGTVOr7a
 --update APPUSERS set password ='$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy' where email='rajesh_hazari@yahoo.com';
 --delete from table APPUSERS_UPDATE_LOG;
 select * from APPUSERS_UPDATE_LOG;
@@ -167,6 +169,8 @@ delete from appusers_auth;
 insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com','ROLE_BASIC_USER');
 insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_SUPER_ADMIN');
 insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_PREMIUM_USER');
+
+insert into appusers_auth (userid,username,email,role_id)  values (3,'devuser','transcriibedevappuser@yahoo.com','ROLE_DEVOPS')
 
 select * from appusers_auth;
 select * from authorities_master;
@@ -192,6 +196,7 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
 
 select * from APPUSERS_UPDATE_LOG;
 --/
+
 CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
 AS $appusers_update_activity$
     BEGIN   
@@ -251,10 +256,10 @@ insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size
 
 
 
+select * from appusers_auth;
+insert into appusers_auth (userid,usename,email,role_id)  values (3,devuser,transcriibedevappuser@yahoo.com,'ROLE_DEVOPS')
 
-insert into appusers_auth (userid,usename,email,role_id)  values (1,rajeshhazari,rajeshhazari@gmail.com,1)
-
-
+ 
 CREATE TABLE CUSTOMERCONTACTMESSAGES (
   id  bigserial PRIMARY KEY,
   email VARCHAR(100),
@@ -263,7 +268,7 @@ CREATE TABLE CUSTOMERCONTACTMESSAGES (
   message text,
   created_at timestamp DEFAULT now() NOT NULL
   );
-  
+  select * from USERREGVERIFYLOGDETAILS
   DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
   CREATE TABLE USERREGVERIFYLOGDETAILS (
   id bigserial PRIMARY KEY,

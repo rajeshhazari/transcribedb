@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Solr managed schema - automatically generated - DO NOT EDIT -->
-<schema name="nutch" version="1.5">
+<schema name="transcribeapp" version="1.5">
   <uniqueKey>id</uniqueKey>
   <defaultSearchField>text</defaultSearchField>
   <solrQueryParser defaultOperator="OR"/>
@@ -128,6 +128,35 @@
       <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
     </analyzer>
   </fieldType>
+  
+  	
+	<!-- A general text field that has reasonable, generic
+         cross-language defaults: it tokenizes with StandardTokenizer,
+	 removes stop words from case-insensitive "stopwords.txt"
+	 (empty by default), and down cases.  At query time only, it
+	 also applies synonyms. -->
+	 
+    <fieldType name="text_general_suggest" class="solr.TextField" positionIncrementGap="100" sortMissingLast="true" omitNorms="true">
+     <analyzer type="index">
+        <tokenizer class="solr.ClassicTokenizerFactory"/> 
+		<filter class="solr.ClassicFilterFactory"/>
+		<filter class="solr.LowerCaseFilterFactory"/>		
+        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+		<filter class="solr.ShingleFilterFactory" maxShingleSize="5" outputUnigrams="true"/>		
+		
+      </analyzer>
+      <analyzer type="query">
+		<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+         <tokenizer class="solr.ClassicTokenizerFactory"/> 
+		<filter class="solr.ClassicFilterFactory"/>		
+		
+        <filter class="solr.LowerCaseFilterFactory"/>		
+        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+		<filter class="solr.ShingleFilterFactory" maxShingleSize="5" outputUnigrams="true"/>		
+      </analyzer>
+    </fieldType>
+    
+    
   <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
     <analyzer type="index">
       <tokenizer class="solr.StandardTokenizerFactory"/>
@@ -171,41 +200,30 @@
     </analyzer>
   </fieldType>
   <field name="_version_" type="long" indexed="true" stored="true"/>
-  <field name="anchor" type="text_general" multiValued="true" indexed="true" stored="true"/>
-  <field name="author" type="string" indexed="true" stored="true"/>
+  <field name="filename" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="filesize" type="string" indexed="true" stored="true"/>
   <field name="batchId" type="string" indexed="false" stored="true"/>
-  <field name="boost" type="float" indexed="false" stored="true"/>
-  <field name="cache" type="string" indexed="false" stored="true"/>
+  <field name="transcribedText" type="text_general" multiValued="true" indexed="false" stored="true"/>
   <field name="cc" type="string" multiValued="true" indexed="true" stored="true"/>
-  <field name="content" type="text_general" indexed="true" stored="true"/>
-  <field name="contentLength" type="string" indexed="false" stored="true"/>
-  <field name="date" type="tdate" indexed="true" stored="true"/>
-  <field name="digest" type="string" indexed="false" stored="true"/>
-  <field name="feed" type="string" indexed="true" stored="true"/>
+  <field name="contentType" type="String" indexed="true" stored="true"/>
   <field name="host" type="url" indexed="true" stored="false"/>
   <field name="lang" type="string" indexed="true" stored="true"/>
   <field name="lastModified" type="date" indexed="false" stored="true"/>
-  <field name="publishedDate" type="date" indexed="true" stored="true"/>
-  <field name="rawcontent" type="string" indexed="false" stored="true"/>
-  <field name="subcollection" type="string" multiValued="true" indexed="true" stored="true"/>
-  <field name="tag" type="string" multiValued="true" indexed="true" stored="true"/>
-  <field name="text" type="text_general" multiValued="true" indexed="true" stored="false"/>
-  <field name="title" type="text_general" multiValued="true" indexed="true" stored="true"/>
-  <field name="tld" type="string" indexed="false" stored="false"/>
-  <field name="tstamp" type="date" indexed="false" stored="true"/>
-  <field name="type" type="string" multiValued="true" indexed="true" stored="true"/>
-  <field name="updatedDate" type="pdate" indexed="true" stored="true"/>
-  <field name="url" type="url" indexed="true" stored="true"/>
+  <field name="publishedDate" type="date" indexed="true" stored="true" default="NOW"/>
   
+  
+	<field name="textSuggest" type="text_general_suggest" indexed="true" stored="false" omitNorms="true" multiValued="true" />
+	<field name="textSpell" type="text_general" indexed="true" stored="false" omitNorms="true" multiValued="true" />
+
   
   
   <field name="id" type="string" indexed="true" required="true" stored="true"/>
   
   <dynamicField name="meta_*" type="string" indexed="true" stored="true"/>
   
-  <copyField source="anchor" dest="text"/>
-  <copyField source="author" dest="text"/>
-  <copyField source="content" dest="text"/>
-  <copyField source="title" dest="text"/>
+  <copyField source="filename" dest="textSpell"/>
+  <copyField source="transcribedText" dest="textSpell"/>
+  <copyField source="filename" dest="textSuggest"/>
+  <copyField source="transcribedText" dest="textSuggest"/>
   
 </schema>

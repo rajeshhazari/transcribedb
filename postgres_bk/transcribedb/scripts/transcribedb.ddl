@@ -10,14 +10,12 @@ SET client_min_messages = warning;
 
 SET search_path = public, pg_catalog;
 
-drop database IF EXISTS transcribeapp_db;
 CREATE DATABASE transcribeapp_db;
 
---DROP TRIGGER last_updated ON transcribeapp_db.users;
---DROP TRIGGER last_updated ON transcribeapp_db.unregistered_users;
-CREATE SCHEMA transcribe_schema;
+#DROP TRIGGER last_updated ON transcribeapp_db.users;
+#DROP TRIGGER last_updated ON transcribeapp_db.unregistered_users;
 
-DROP TABLE IF EXISTS
+
 
 
 CREATE TABLE transcribeapp_db.users (
@@ -36,6 +34,28 @@ CREATE TABLE transcribeapp_db.users (
 
 ALTER TABLE transcribeapp_db.users OWNER TO postgres;
 
+
+
+CREATE SEQUENCE transcribeapp_db.address_address_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE transcribeapp_db.address_address_id_seq OWNER TO postgres;
+
+CREATE TABLE transcribeapp_db.address (
+    address_id integer DEFAULT nextval('address_address_id_seq'::regclass) NOT NULL,
+    address text NOT NULL,
+    address2 text,
+    district text NOT NULL,
+    city_id smallint NOT NULL,
+    postal_code text,
+    phone text NOT NULL,
+    last_updated timestamp with time zone DEFAULT now() NOT NULL
+);
 
 
 

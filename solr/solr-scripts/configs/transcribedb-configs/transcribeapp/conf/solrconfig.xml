@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config>
+    <luceneMatchVersion>LATEST</luceneMatchVersion>
+    <dataDir>${solr.data.dir:}</dataDir>
+    <directoryFactory name="DirectoryFactory" class="solr.RAMDirectoryFactory"/>
+    <codecFactory class="solr.SchemaCodecFactory"/>
+    <schemaFactory class="ClassicIndexSchemaFactory"/>
+    <indexConfig>
+        <lockType>single</lockType>
+        <infoStream>false</infoStream>
+        <checkIntegrityAtMerge>false</checkIntegrityAtMerge>
+    </indexConfig>
+    <updateHandler class="solr.DirectUpdateHandler2">
+        <autoCommit>
+            <maxTime>${solr.autoCommit.maxTime:15000}</maxTime>
+            <openSearcher>false</openSearcher>
+        </autoCommit>
+        <autoSoftCommit>
+            <maxTime>${solr.autoSoftCommit.maxTime:-1}</maxTime>
+        </autoSoftCommit>
+    </updateHandler>
+    <query>
+        <maxBooleanClauses>1024</maxBooleanClauses>
+        <filterCache class="solr.FastLRUCache"
+                     size="10"
+                     initialSize="10"
+                     autowarmCount="0"/>
+
+        <queryResultCache class="solr.LRUCache"
+                          size="10"
+                          initialSize="10"
+                          autowarmCount="0"/>
+
+        <documentCache class="solr.LRUCache"
+                       size="10"
+                       initialSize="10"
+                       autowarmCount="0"/>
+
+        <cache name="perSegFilter"
+               class="solr.search.LRUCache"
+               size="10"
+               initialSize="0"
+               autowarmCount="10"
+               regenerator="solr.NoOpRegenerator"/>
+
+        <enableLazyFieldLoading>true</enableLazyFieldLoading>
+        <queryResultWindowSize>20</queryResultWindowSize>
+        <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+
+        <useColdSearcher>true</useColdSearcher>
+        <maxWarmingSearchers>5</maxWarmingSearchers>
+
+    </query>
+    <requestDispatcher handleSelect="false">
+        <requestParsers enableRemoteStreaming="true"
+                        multipartUploadLimitInKB="2048000"
+                        formdataUploadLimitInKB="2048"
+                        addHttpRequestToContext="false"/>
+
+        <httpCaching never304="true"/>
+    </requestDispatcher>
+    <!-- <requestHandler name="/select" class="solr.SearchHandler">
+        <lst name="defaults">
+            <int name="rows">10</int>
+        </lst>
+    </requestHandler>
+    -->
+    
+    <requestHandler name="/get" class="solr.RealTimeGetHandler">
+        <lst name="defaults">
+            <str name="omitHeader">true</str>
+            <str name="wt">json</str>
+            <str name="indent">true</str>
+        </lst>
+    </requestHandler>
+    
+    
+    
+      
+   <requestHandler name="/select" class="solr.SearchHandler">
+    <!-- default values for query parameters can be specified, these
+         will be overridden by parameters in the request
+      -->
+     <lst name="defaults">
+		<str name="echoParams">explicit</str>
+		<int name="rows">10</int>
+		<str name="df">textSpell</str>
+		<str name="defType">edismax</str>
+		<str name="synonyms">true</str>
+		<str name="spellcheck">true</str>
+		<str name="spellcheck.dictionary">default</str>
+		<str name="spellcheck.dictionary">wordbreak</str>
+		<int name="spellcheck.count">5</int>
+		<str name="spellcheck.alternativeTermCount">15</str>		
+		<str name="spellcheck.collate">true</str>
+		<str name="spellcheck.onlyMorePopular">false</str>
+		<str name="spellcheck.extendedResults">true</str>
+		<str name ="spellcheck.maxCollations">100</str>
+		<str name="spellcheck.collateParam.mm">100%</str>
+		<str name="spellcheck.collateParam.q.op">AND</str>
+		<str name="spellcheck.maxCollationTries">1000</str>
+		<str name="q.op">OR</str>
+		<str name="lowercaseOperators">true</str>
+		
+		<!--       
+		<str name="spellcheck.maxCollations">5</str>
+		<str name="spellcheck.maxCollationTries">5</str>		
+		-->
+     </lst>
+    <!-- In addition to defaults, "appends" params can be specified
+         to identify values which should be appended to the list of
+         multi-val params from the query (or the existing "defaults").
+      -->
+    <!-- In this example, the param "fq=instock:true" would be appended to
+         any query time fq params the user may specify, as a mechanism for
+         partitioning the index, independent of any user selected filtering
+         that may also be desired (perhaps as a result of faceted searching).
+
+         NOTE: there is *absolutely* nothing a client can do to prevent these
+         "appends" values from being used, so don't use this mechanism
+         unless you are sure you always want it.
+      -->
+    <!--
+       <lst name="appends">
+         <str name="fq">inStock:true</str>
+       </lst>
+      -->
+    <!-- "invariants" are a way of letting the Solr maintainer lock down
+         the options available to Solr clients.  Any params values
+         specified here are used regardless of what values may be specified
+         in either the query, the "defaults", or the "appends" params.
+
+         In this example, the facet.field and facet.query params would
+         be fixed, limiting the facets clients can use.  Faceting is
+         not turned on by default - but if the client does specify
+         facet=true in the request, these are the only facets they
+         will be able to see counts for; regardless of what other
+         facet.field or facet.query params they may specify.
+
+         NOTE: there is *absolutely* nothing a client can do to prevent these
+         "invariants" values from being used, so don't use this mechanism
+         unless you are sure you always want it.
+      -->
+    <!--
+       <lst name="invariants">
+         <str name="facet.field">cat</str>
+         <str name="facet.field">manu_exact</str>
+         <str name="facet.query">price:[* TO 500]</str>
+         <str name="facet.query">price:[500 TO *]</str>
+       </lst>
+      -->
+		
+	<arr name="last-components">
+		<str>spellcheck</str>
+		
+	</arr>
+    </requestHandler>
+	
+<searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+
+     <str name="queryAnalyzerFieldType">text_general</str>
+    
+	<lst name="spellchecker">
+      <!--
+        Optional, it is required when more than one spellchecker is configured.
+        Select non-default name with spellcheck.dictionary in request handler.
+    -->
+    <str name="name">IndexBasedSpellChecker</str>
+    <!-- The classname is optional, defaults to IndexBasedSpellChecker -->
+    <str name="classname">solr.IndexBasedSpellChecker</str>
+    <!--
+        Load tokens from the following field for spell checking,
+        analyzer for the field's type as defined in schema.xml are used
+    -->
+    <str name="field">textSpell</str>
+    <!-- Optional, by default use in-memory index (RAMDirectory) -->
+    <str name="spellcheckIndexDir">./spellchecker</str>
+    <!-- Set the accuracy (float) to be used for the suggestions. Default is 0.5 -->
+    <str name="accuracy">0.65</str>
+    <!-- Require terms to occur in 1/100th of 1% of documents in order to be included in the dictionary -->
+    <float name="thresholdTokenFrequency">.0001</float>
+	<str name="distanceMeasure">org.apache.lucene.search.spell.NGramDistance</str>
+	<str name="buildOnCommit">true</str>
+     </lst>
+    
+    <!-- a spellchecker that can break or combine words.  See "/spell" handler below for usage -->
+     <!-- <lst name="spellchecker">
+      <str name="name">WordBreakSolrSpellChecker</str>
+      <str name="classname">solr.WordBreakSolrSpellChecker</str>      
+      <str name="field">textSpell</str>
+	   <str name="spellcheckIndexDir">./spellchecker</str>	   
+      <str name="combineWords">true</str>
+      <str name="breakWords">false</str>
+      <int name="maxChanges">15</int>
+	  <str name="distanceMeasure">org.apache.lucene.search.spell.JaroWinklerDistance</str>
+	  
+     </lst>
+	 -->
+	 <!-- a spellchecker that can break or combine words. (Solr 4.0 see SOLR-2993) -->
+	  <lst name="spellchecker">
+		<str name="name">wordbreak</str>
+		<str name="classname">solr.WordBreakSolrSpellChecker</str>
+		<str name="field">textSpell</str>
+		<str name="combineWords">true</str>
+		<str name="breakWords">false</str>
+		<int name="maxChanges">5</int>
+	  </lst>
+	 
+	   <lst name="spellchecker">
+		<str name="name">default</str>
+		<str name="field">textSpell</str>
+		<str name="classname">solr.IndexBasedSpellChecker</str> 
+		<!-- <str name="classname">solr.DirectSolrSpellChecker</str> -->
+		<str name="spellcheckIndexDir">./spellchecker</str>
+		<!-- <str name="distanceMeasure">org.apache.lucene.search.spell.JaroWinklerDistance</str>-->
+		<str name="accuracy">0.75</str>
+		<float name="thresholdTokenFrequency">0.01</float>	
+		<str name="buildOnCommit">true</str>
+		<str name="spellcheck.maxResultsForSuggest">5</str>		
+     </lst>
+	 
+    
+  </searchComponent>
+	
+
+  
+  <searchComponent name="SuggestComponent" class="solr.SuggestComponent">
+   
+      <!-- 
+      <lst name="suggester">
+      <str name="name">DictionarySuggester</str>
+      <str name="lookupImpl">AnalyzingLookupFactory</str>     
+      <str name="dictionaryImpl">FileDictionaryFactory</str>     
+      <str name="field">textSuggest</str>
+      <str name="sourceLocation">autoSuggestDic.dic</str>
+      <str name="suggestAnalyzerFieldType">text_general_suggest</str>
+      <str name="buildOnCommit">true</str>
+   </lst>
+      -->
+      
+    <lst name="suggester">
+      <str name="name">AnalyzingSuggester</str>
+      <str name="lookupImpl">AnalyzingLookupFactory</str>
+      <str name="dictionaryImpl">HighFrequencyDictionaryFactory</str>      
+      <str name="storeDir">suggest_analyzing</str>
+      <str name="highlight">false</str>
+      <float name="threshold">0.0001</float>
+      <str name="field">textSuggest</str>
+      <str name="suggestAnalyzerFieldType">text_general_suggest</str>
+      <str name="buildOnCommit">false</str>
+      <str name="buildOnOptimize">true</str>
+      <bool name="exactMatchFirst">true</bool>
+   </lst>
+  
+</searchComponent>
+
+	<requestHandler name="/suggest" class="solr.SearchHandler" >
+  <lst name="defaults">
+    <str name="suggest">true</str>
+    <str name="suggest.count">10</str>
+    <!-- <str name="suggest.dictionary">DictionarySuggester</str>	-->
+	<str name="suggest.dictionary">AnalyzingSuggester</str>
+	<str name="buildOnCommit">true</str>
+	<str name="onlyMorePopular">false</str>
+  </lst>
+  <arr name="components">
+    <str>SuggestComponent</str>
+  </arr>
+</requestHandler>
+
+
+  
+  
+    <requestHandler name="/update" class="solr.UpdateRequestHandler">
+    </requestHandler>
+
+    <requestHandler name="/admin/"
+                    class="solr.admin.AdminHandlers"/>
+
+
+    <queryResponseWriter name="json" class="solr.JSONResponseWriter">
+        <str name="content-type">text/plain; charset=UTF-8</str>
+    </queryResponseWriter>
+
+    
+    <requestHandler name="/mlt" class="solr.MoreLikeThisHandler">
+	 <lst name="defaults">
+		<str name="mlt.fl">textSpell</str>
+		<str name="mlt.mintf">1</str>
+		<str name="mlt.mindf">2</str>		
+	</lst>
+ </requestHandler>
+ 
+    
+    
+</config>

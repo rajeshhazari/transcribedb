@@ -1,0 +1,51 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+  postgres-dev:
+    image: postgres
+    restart: always
+    networks:
+      - postgres-bridge
+    volumes:
+      - postgres-dev:/media/apps4/postgres/db:rw
+      - PGDATA=/media/apps4/postgres/db/data
+      - "$PWD/transribedb-postgres.conf":/etc/postgresql/postgresql.conf
+    ports:
+      - 6432:5432
+    environment:
+      POSTGRES_PASSWORD: devuser321
+      POSTGRES_USER: devuser
+      POSTGRES_DB: transcribe_db
+
+  pg-admin:
+    image: dpage/pgadmin4
+    volumes:
+      - pgadmin-dev:/media/apps4/postgres/pgAdmin4/.pgadmin
+      - ./scripts:/var/lib/pgadmin/storage/user/
+    networks:
+      - postgres-bridge
+    ports:
+      - '8080:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: devappuser@yahoo.com
+      PGADMIN_DEFAULT_PASSWORD: devuser321
+
+  adminer:
+    image: adminer
+    restart: always
+    networks:
+      - postgres-bridge
+    ports:
+      - 5050:8080
+
+networks:
+  postgres-bridge:
+    driver: bridge
+
+
+volumes:
+  postgres-dev:
+  pgadmin-dev:
+  adminer:

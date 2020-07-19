@@ -1,0 +1,27 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+  transcribeapp-dev:
+    image: postgres
+    restart: always
+    volumes:    
+        - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+        - ./scripts/sql/transcribedb.ddl:/docker-entrypoint-initdb.d/transcribedb.ddl
+        - ./scripts/sql/postgres_master_data_import.data:/docker-entrypoint-initdb.d/postgres_master_data_import.data
+        - ./scripts/sql/us_cities.sql:/docker-entrypoint-initdb.d/us_cities.sql
+        - postgres:/media/apps4/postgres/db:rw
+    env_file:
+        - ./scripts/env_file
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+        - 6432:5432
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PWD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: transcribeapp_db
+      PGDATA: /media/apps4/postgres/db
+
+volumes:
+  postgres:

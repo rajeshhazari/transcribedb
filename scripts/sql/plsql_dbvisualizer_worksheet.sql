@@ -1,56 +1,4 @@
-INSERT INTO STATES_MASTER  (STATE_CODE, STATE_NAME)  VALUES
-('AL','Alabama'),
-('AK','Alaska'),
-('AZ','Arizona'),
-('AR','Arkansas'),
-('CA','California'),
-('CO','Colorado'),
-('CT','Connecticut'),
-('DE','Delaware'),
-('DC','District of Columbia'),
-('FL','Florida'),
-('GA','Georgia'),
-('HI','Hawaii'),
-('ID','Idaho'),
-('IL','Illinois'),
-('IN','Indiana'),
-('IA','Iowa'),
-('KS','Kansas'),
-('KY','Kentucky'),
-('LA','Louisiana'),
-('ME','Maine'),
-('MD','Maryland'),
-('MA','Massachusetts'),
-('MI','Michigan'),
-('MN','Minnesota'),
-('MS','Mississippi'),
-('MO','Missouri'),
-('MT','Montana'),
-('NE','Nebraska'),
-('NV','Nevada'),
-('NH','New Hampshire'),
-('NJ','New Jersey'),
-('NM','New Mexico'),
-('NY','New York'),
-('NC','North Carolina'),
-('ND','North Dakota'),
-('OH','Ohio'),
-('OK','Oklahoma'),
-('OR','Oregon'),
-('PA','Pennsylvania'),
-('PR','Puerto Rico'),
-('RI','Rhode Island'),
-('SC','South Carolina'),
-('SD','South Dakota'),
-('TN','Tennessee'),
-('TX','Texas'),
-('UT','Utah'),
-('VT','Vermont'),
-('VA','Virginia'),
-('WA','Washington'),
-('WV','West Virginia'),
-('WI','Wisconsin'),
-('WY','Wyoming');
+
 select * from states_master;
 select * from authorities_master;
 desc table authorities_master
@@ -109,6 +57,7 @@ CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
   token text,
    last_loggedin timestamp default CURRENT_TIMESTAMP
 );
+
 
 ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
 select * from APPUSERS_TRANSCRIPTIONS;
@@ -189,7 +138,7 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
     active boolean,
     disabled boolean,
     verified boolean,
-    locked boolean,
+    locked boolean, 
     superuser boolean,
     last_updated timestamp default CURRENT_TIMESTAMP
 );
@@ -211,8 +160,9 @@ AS $appusers_update_activity$
                 SELECT 'I',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser  FROM new_table n;
         END IF;
         RETURN NULL;
-    END $appusers_update_activity$ LANGUAGE plpgsql;
-/
+    END;
+     $appusers_update_activity$ LANGUAGE plpgsql;
+
     
 CREATE TRIGGER APPUSERS_PROFILE_INS_LOG
     AFTER INSERT ON APPUSERS
@@ -254,10 +204,10 @@ select * from APPUSERS_TRANSCRIPTIONS;
 insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size) values (1,'rajeshhazari@gmail.com', 'sample.wav', 'one two threee and so on.. sample response',30);
 insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size) values (3,'rajesh_hazari', 'sample.wav',  'one two threee and so on.. sample response', 31);
 
+insert into appusers_auth (userid,usename,email,role_id)  values (3,devuser,transcriibedevappuser@yahoo.com,'ROLE_DEVOPS')
 
 
 select * from appusers_auth;
-insert into appusers_auth (userid,usename,email,role_id)  values (3,devuser,transcriibedevappuser@yahoo.com,'ROLE_DEVOPS')
 
  
 CREATE TABLE CUSTOMERCONTACTMESSAGES (

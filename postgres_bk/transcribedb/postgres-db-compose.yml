@@ -6,11 +6,8 @@ services:
   postgres-dev:
     image: postgres
     restart: always
-    volumes:    
-        - ./my-postgres.conf:/etc/postgresql/postgresql.conf
-        - ./scripts/sql/transcribedb.ddl:/docker-entrypoint-initdb.d/
-        - postgres:/media/apps4/postgres/db:rw
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - postgres:/media/apps4/postgres/db:rw
     ports:
       - 6432:5432
     environment:

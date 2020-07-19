@@ -1,0 +1,2 @@
+POSTGRES_PASSWORD=devuser321 
+POSTGRES_USER=devuser

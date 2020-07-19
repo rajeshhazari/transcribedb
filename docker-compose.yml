@@ -1,62 +1,35 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
 services:
 
-  postgres-dev:
+  transcribeapp-dev:
     image: postgres
+    container_name: transcribeapp-dev
     restart: always
-    networks:
-      - transcribedb_default
     volumes:
-      - postgres:/media/apps4/postgres/db:rw
+        - /opt/apps/scripts/alias.sh:/home/alias.sh
+        - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+        - ./scripts/sql/transcribedb.ddl:/docker-entrypoint-initdb.d/1-transcribedb.ddl
+        - ./scripts/sql/postgres_master_data_import.data:/docker-entrypoint-initdb.d/2-postgres_master_data_import.data
+        - ./scripts/sql/us_cities.sql:/docker-entrypoint-initdb.d/3-us_cities.sql
+        - postgresdb-data:/media/apps4/postgres/db:rw
+        - /media/apps4/postgres/db:/media/apps4/postgres/db:rw
+    env_file:
+        - ./scripts/env_file
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
-      - 6432:5432
+        - 6432:5432
     environment:
-      POSTGRES_PASSWORD: devuser321
-      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD:
       POSTGRES_DB: transcribeapp_db
-      PGDATA: /media/apps4/postgres/db
-  
-  solr-dev:
-    images: transcribe-solr:8.3
-    container_name: solr-dev
-    restart: always
-    networks: dbnet
-    ports:
-      - 8983:8983
-    volumes:
-      - /opt/solr/:/opt/solr/:rw
-      - /opt/apps/configs/:/opt/apps/config:rw
-    entrypoint:
-      - docker-entrypoint.sh
-      - solr
-      - start
-      - -f
-      - -c
-      - -z
-      - zoo-dev1:2181
-      - -a
-      - "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044"
-    environment:
-      SOLR_STOP_KEY: solr-dev
-    depends_on:
-      - zoo-node1
-   
-   
-   zoo-node1:
-        image: zookeeper:3.5
-        container_name: zoo-dev1
-        restart: always
-        hostname: zoo-dev1
-        ports:
-        - 2181:2181
-        environment:
-        ZOO_MY_ID: 1
-        #ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
-        ZOO_SERVERS: server.1=0.0.0.0:2888:3888
-        networks: dbnet
-    
+      PGDATA: /opt/apps/postgres/db
+    networks:
+        - dbnet
+        
+volumes:
+  postgresdb-data:
 networks:
   dbnet:
     driver: bridge
 
-volumes:
-  postgres:

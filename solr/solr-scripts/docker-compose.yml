@@ -1,0 +1,41 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+    solr-dev:
+    image: solr:latest
+    container_name: solr-dev
+    restart: always
+    networks: 
+        - solrnet
+    ports:
+        - 8983:8983
+    volumes:
+        - /opt/apps/solr/solrdata:/var/solr/:rw
+        - /opt/apps/solr/configs/:/opt/apps/config:rw
+    environment:
+        - ZK_HOST=zoo-node1:2181
+    command:
+      - solr-precreate
+    depends_on:
+        - zoo-node1
+
+  zoo-node1:
+        image: zookeeper:3.5
+        container_name: zoo-node1
+        restart: always
+        hostname: zoo-node1
+        volumes:
+          - /opt/apps/zk/:/opt/zk:rw
+        ports:
+            - 2181:2181
+        environment: 
+            ZOO_MY_ID: 1
+            ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+        networks: 
+            - solrnet
+
+networks:
+  solrnet:
+    driver: bridge

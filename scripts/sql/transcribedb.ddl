@@ -16,7 +16,8 @@ SET search_path = public, pg_catalog;
 
 --DROP TRIGGER last_updated ON transcribeapp_db.users;
 --DROP TRIGGER last_updated ON transcribeapp_db.unregistered_users;
--- CREATE SCHEMA transcribe_schema;
+DROP SCHEMA if exists  transcribe_schema;
+CREATE SCHEMA transcribe_schema;
 ALTER DATABASE transcribeapp_db OWNER TO devuser;
 
 --ALTER TABLE APPUSERS_TRANSCRIPTIONS DROP CONSTRAINT IF EXISTS FK_Users_Transcriptions_users;
@@ -39,13 +40,11 @@ DROP TABLE IF EXISTS APPUSERS CASCADE;
 --DROP TABLE IF EXISTS authorities_user CASCADE;
 DROP TABLE IF EXISTS appusers_auth CASCADE;
 DROP TABLE IF EXISTS authorities_master cascade;
-DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
 DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
 DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS CASCADE;
 DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
 DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
-DROP TABLE IF EXISTS customer_contact_messages;
 --ALTER TABLE USER_SESSIONS_ATTRIBUTES DROP CONSTRAINT IF EXISTS USER_SESSIONS_ATTRIBUTES_FK;
 
 DROP TABLE IF EXISTS USER_SESSIONS;
@@ -63,7 +62,10 @@ DROP SEQUENCE IF EXISTS payment_payment_id_seq;
 DROP TABLE  IF EXISTS  SPRING_SESSION CASCADE;
 DROP TABLE IF EXISTS SPRING_SESSION_ATTRIBUTES CASCADE;
 
-drop TABLE CUSTOMER_contact_messages IF EXISTS;
+DROP TABLE IF EXISTS REGISTEREDAPPUSERS_ACTIVITY_LOG;
+DROP TABLE IF EXISTS CUSTOMERCONTACTMESSAGES;
+DROP TABLE IF EXISTS APPUSERS_UPDATE_LOG CASCADE;
+
 
 
 CREATE TABLE QRTZ_JOB_DETAILS
@@ -280,28 +282,35 @@ ALTER TABLE APPUSERS ADD
 CONSTRAINT APPUSERS_USERNAME_EMAIL_KEY UNIQUE (userid,username,email);
 
 
-
-
 CREATE TABLE APPUSERS_UPDATE_LOG(
     id bigserial PRIMARY KEY,
-    operation         char(1)   NOT NULL,
-    user_id int not null,
+    operation   char(1)   NOT NULL,
+    userid int not null,
     username text not null,
     email text not null,
     password text,
     first_name text,
-    lastName text,
+    last_name text,
     phone_number text,
     active boolean,
     disabled boolean,
     verified boolean,
-    locked boolean,
+    locked boolean, 
     superuser boolean,
     last_updated timestamp default CURRENT_TIMESTAMP
 );
 
 
 
+
+CREATE TABLE REGISTEREDAPPUSERS(
+  id serial not null PRIMARY KEY,
+  username VARCHAR(100) not null,
+   email VARCHAR(100) not null,
+   confToken VARCHAR(100) not null,
+   confEmail VARCHAR(500) not null,
+  CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (email) references APPUSERS(email)
+);
 
 
 CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
@@ -313,18 +322,8 @@ CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
    last_loggedin timestamp default CURRENT_TIMESTAMP
 );
 
+
 ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
-
-
-CREATE TABLE REGISTEREDAPPUSERS(
-  id identity not null auto_increment,
-  username VARCHAR(100) not null,
-   email VARCHAR(100) not null,
-   confToken VARCHAR(100) not null,
-   confEmail VARCHAR(500) not null,
-  primary key (id),
-  CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (username,email) references APPUSERS(username,email)
-);
 
 
 
@@ -347,31 +346,12 @@ CREATE TABLE appusers_auth (
  role_id VARCHAR(50),
  updated_time timestamp default CURRENT_TIMESTAMP,
  primary key (auth_user_id),
- FOREIGN KEY (role_id) REFERENCES authorities_master (role_id)
+ CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES authorities_master (role_id),
+ CONSTRAINT FK_APPUSERS_AUTH_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email)
 );
 
 
-ALTER TABLE appusers_auth ADD CONSTRAINT FK_AUTHROTIES_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email);
-
-
-CREATE TABLE USERREGVERIFYLOGDETAILS (
-  id bigserial PRIMARY KEY,
-  username text not null,
-  email text not null UNIQUE,
-  code bigint not null,
-  disabled boolean default false,
-  verified boolean default false,
-  confEmailUrl text not null,
-  verifiedRegClientIp text ,
-  verificationEmailSent boolean default false,
-  confEmailToken text not null UNIQUE,
-  emailSentDate  timestamp default CURRENT_TIMESTAMP,
-  verificationDate timestamp not null
-);
-
-
-
---ALTER TABLE USERREGVERIFYLOGDETIALS ADD CONSTRAINT FK_REGUSERS_USERREGVERIFYLOGDETIALS_EMAIL foreign key (username,email) references APPUSERS(username,email)
+--ALTER TABLE appusers_auth ADD CONSTRAINT FK_AUTHROTIES_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email);
 
 CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   id bigserial PRIMARY KEY,
@@ -391,10 +371,12 @@ CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   registration_log_date timestamp default CURRENT_TIMESTAMP
 );
 
+
+
 CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   log_id bigserial PRIMARY KEY,
   username text not null,
-  userid integer,
+  userid integer not null,
   email text not null,
   transcription_req_id bigint not null,
   transcribe_res_type text default 'application/json',
@@ -407,6 +389,8 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   transcribed_date timestamp default CURRENT_TIMESTAMP,
   uploaded_date timestamp default CURRENT_TIMESTAMP
 );
+
+
 ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
 CONSTRAINT APPUSERS_TRANSCRIPTIONS_UNIQUE_KEY UNIQUE (log_id,transcription_req_id,email);
 
@@ -419,20 +403,19 @@ CONSTRAINT APPUSERS_TRANSCRIPTIONS_UNIQUE_KEY UNIQUE (log_id,transcription_req_i
 --);
 
 ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
-  ( user_id, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
+  ( userid, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
   
   CREATE TABLE TRANSCRIBEFILELOG (
   tflog_id bigserial PRIMARY KEY,
   email text,
   file_name text,
-  log_id bigint,
+  log_id integer,
   transcription_req_id bigint,
   transcribe_res text,
   file_size integer,
-  session_id VARCHAR(256),
   created_at timestamp DEFAULT now() NOT NULL,
-  FOREIGN KEY (log_id,transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
+  FOREIGN KEY (log_id, transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
 );
 
 
@@ -636,28 +619,6 @@ CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE PROCED
 
 
 
-
-drop table APPUSERS_UPDATE_LOG cascade;
-
-CREATE TABLE APPUSERS_UPDATE_LOG(
-    id bigserial PRIMARY KEY,
-    operation   char(1)   NOT NULL,
-    userid int not null,
-    username text not null,
-    email text not null,
-    password text,
-    first_name text,
-    last_name text,
-    phone_number text,
-    active boolean,
-    disabled boolean,
-    verified boolean,
-    locked boolean,
-    superuser boolean,
-    last_updated timestamp default CURRENT_TIMESTAMP
-);
-
-
 CREATE TABLE USERREGVERIFYLOGDETAILS (
   id bigserial PRIMARY KEY,
   username text not null,
@@ -674,11 +635,13 @@ CREATE TABLE USERREGVERIFYLOGDETAILS (
 
 
 
+--ALTER TABLE USERREGVERIFYLOGDETAILS ADD CONSTRAINT FK_REGUSERS_USERREGVERIFYLOGDETAILS_EMAIL foreign key (username,email) references APPUSERS(username,email)
+
 
 --/
 
 CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
-AS $appusers_update_activity$
+AS $appusers_update_activity_trigger$
     BEGIN   
             IF (TG_OP = 'DELETE') THEN
             INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
@@ -691,8 +654,8 @@ AS $appusers_update_activity$
                 SELECT 'I',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser  FROM new_table n;
         END IF;
         RETURN NULL;
-    END $appusers_update_activity$ LANGUAGE plpgsql;
-/
+    END $appusers_update_activity_trigger$  LANGUAGE plpgsql;
+
     
 CREATE TRIGGER APPUSERS_PROFILE_INS_LOG
     AFTER INSERT ON APPUSERS
@@ -708,7 +671,7 @@ CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
     FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
     
     
-    
+/    
     
 
 COMMIT;

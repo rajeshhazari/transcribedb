@@ -259,7 +259,7 @@ CREATE INDEX IDX_QRTZ_FT_TG
 
 
 --ALTER SEQUENCE Cast1_id_seq RESTART WITH 100;
-  
+
   CREATE TABLE APPUSERS(
   userid bigserial PRIMARY KEY,
   username text not null unique ,
@@ -295,7 +295,7 @@ CREATE TABLE APPUSERS_UPDATE_LOG(
     active boolean,
     disabled boolean,
     verified boolean,
-    locked boolean, 
+    locked boolean,
     superuser boolean,
     last_updated timestamp default CURRENT_TIMESTAMP
 );
@@ -331,7 +331,7 @@ ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_
 CREATE TABLE authorities_master (
  id serial PRIMARY KEY ,
  role_id VARCHAR(50) unique,
- roleDesc VARCHAR(400),
+ roledesc VARCHAR(400),
  max_file_size int not null,
  max_number_files int not null
 );
@@ -339,13 +339,13 @@ CREATE TABLE authorities_master (
 
 
 CREATE TABLE appusers_auth (
- auth_user_id bigserial not null ,
- userid bigserial ,
+ auth_user_id bigserial not null PRIMARY KEY,
+ userid bigserial not null,
  username text,
- email text,
- role_id VARCHAR(50),
+ email text not null,
+ role_id VARCHAR(50) not null,
  updated_time timestamp default CURRENT_TIMESTAMP,
- primary key (auth_user_id),
+ 
  CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES authorities_master (role_id),
  CONSTRAINT FK_APPUSERS_AUTH_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email)
 );
@@ -405,7 +405,7 @@ CONSTRAINT APPUSERS_TRANSCRIPTIONS_UNIQUE_KEY UNIQUE (log_id,transcription_req_i
 ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
   ( userid, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
-  
+
   CREATE TABLE TRANSCRIBEFILELOG (
   tflog_id bigserial PRIMARY KEY,
   email text,
@@ -419,11 +419,11 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
 );
 
 
---CREATE TRIGGER REGISTEREDAPPUSERS_ACTIVITY_LOG_trigger 
---    AFTER INSERT ON APPUSERS   REFERENCING NEW TABLE AS X          FOR EACH ROW 
-    
-    
-    
+--CREATE TRIGGER REGISTEREDAPPUSERS_ACTIVITY_LOG_trigger
+--    AFTER INSERT ON APPUSERS   REFERENCING NEW TABLE AS X          FOR EACH ROW
+
+
+
   CREATE TABLE USER_SESSIONS (
   PRIMARY_ID CHAR(36) NOT NULL,
   SESSION_ID CHAR(36) NOT NULL,
@@ -445,7 +445,7 @@ CREATE TABLE CUSTOMERCONTACTMESSAGES (
   message text,
   created_at timestamp DEFAULT now() NOT NULL
   );
-  
+
 
 
 
@@ -463,9 +463,9 @@ CREATE TABLE address (
 
 
 --
- --- 
  ---
- 
+ ---
+
  CREATE TABLE COUNTRY_MASTER (
     ID SERIAL PRIMARY KEY,
     country_code VARCHAR(3),
@@ -640,9 +640,9 @@ CREATE TABLE USERREGVERIFYLOGDETAILS (
 
 --/
 
-CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER 
+CREATE OR REPLACE FUNCTION process_users_profile_audit() RETURNS TRIGGER
 AS $appusers_update_activity_trigger$
-    BEGIN   
+    BEGIN
             IF (TG_OP = 'DELETE') THEN
             INSERT INTO APPUSERS_UPDATE_LOG (operation,userid,username,email,password,first_name,last_name,phone_number,active,disabled,verified,locked,superuser)
                 SELECT 'D',  n.userid,n.username,n.email,n.password,n.first_name,n.last_name,n.phone_number,n.active,n.disabled,n.verified,n.locked,n.superuser FROM old_table o;
@@ -656,7 +656,7 @@ AS $appusers_update_activity_trigger$
         RETURN NULL;
     END $appusers_update_activity_trigger$  LANGUAGE plpgsql;
 
-    
+
 CREATE TRIGGER APPUSERS_PROFILE_INS_LOG
     AFTER INSERT ON APPUSERS
     REFERENCING NEW TABLE AS new_table
@@ -669,9 +669,9 @@ CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
     AFTER DELETE ON APPUSERS
     REFERENCING OLD TABLE AS old_table
     FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
-    
-    
-/    
-    
+
+
+/
+
 
 COMMIT;

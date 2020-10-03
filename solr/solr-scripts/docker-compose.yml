@@ -4,7 +4,7 @@ version: '3.1'
 services:
 
     solr-dev:
-    image: solr:latest
+    image: solr:8.5.1
     container_name: solr-dev
     restart: always
     networks: 
@@ -17,7 +17,12 @@ services:
     environment:
         - ZK_HOST=zoo-node1:2181
     command:
-      - solr-precreate
+      - solr
+      - start
+      - -c
+      - -m 2g
+      - -z zoo-node1:21821
+      - -p 8983:8983
     depends_on:
         - zoo-node1
 

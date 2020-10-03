@@ -1,7 +1,7 @@
 
 select * from states_master;
 select * from authorities_master;
-desc table authorities_master
+describe table authorities_master;
 alter table appusers_auth drop constraint appusers_auth_role_id_fkey;
 drop table authorities_master cascade ;
 --alter table authorities_master  alter column roledesc type varchar(400);
@@ -12,15 +12,24 @@ CREATE TABLE authorities_master (
  max_file_size int not null,
  max_number_files int not null
 );
+select * from appusers;
+select * from appusers_auth;
+select * from authorities_master;
+
+
+ 
+SELECT appusers_auth.email AS email, appusers_auth.role_id AS role_id, 
+appusers_auth.userid AS userid, appusers_auth.username AS username, appusers_auth.auth_user_id AS auth_user_id,
+ appusers_auth.updated_time AS updated_time FROM appusers_auth WHERE appusers_auth.userid = 5 
 
 
 drop table appusers_auth ;
 CREATE TABLE appusers_auth (
  auth_user_id bigserial not null ,
- userid bigserial ,
+ userid bigserial not null,
  username text,
- email text,
- role_id VARCHAR(50),
+ email text not null,
+ role_id VARCHAR(50) not null,
  updated_time timestamp default CURRENT_TIMESTAMP,
  primary key (auth_user_id),
  FOREIGN KEY (role_id) REFERENCES authorities_master (role_id)
@@ -122,6 +131,7 @@ insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','r
 insert into appusers_auth (userid,username,email,role_id)  values (3,'devuser','transcriibedevappuser@yahoo.com','ROLE_DEVOPS')
 
 select * from appusers_auth;
+select * from appusers;
 select * from authorities_master;
 drop table APPUSERS_UPDATE_LOG cascade;
 
@@ -218,6 +228,7 @@ CREATE TABLE CUSTOMERCONTACTMESSAGES (
   message text,
   created_at timestamp DEFAULT now() NOT NULL
   );
+  
   select * from USERREGVERIFYLOGDETAILS
   DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
   CREATE TABLE USERREGVERIFYLOGDETAILS (

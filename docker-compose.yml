@@ -1,35 +1,27 @@
+
 # Use postgres/example user/password credentials
-version: '3.1'
+version: '3'
 
 services:
-
   transcribeapp-dev:
-    image: postgres
-    container_name: transcribeapp-dev
+    env_file: ./scripts/env-$NODE_ENV.conf
+    environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}
+    image: postgres:12-alpine
+    container_name: "${POSTGRES_DB}_${NODE_ENV}-db"
     restart: always
     volumes:
         - /opt/apps/scripts/alias.sh:/home/alias.sh
         - ./my-postgres.conf:/etc/postgresql/postgresql.conf
-        - ./scripts/sql/transcribedb.ddl:/docker-entrypoint-initdb.d/1-transcribedb.ddl
-        - ./scripts/sql/postgres_master_data_import.data:/docker-entrypoint-initdb.d/2-postgres_master_data_import.data
-        - ./scripts/sql/us_cities.sql:/docker-entrypoint-initdb.d/3-us_cities.sql
-        - postgresdb-data:/media/apps4/postgres/db:rw
-        - /media/apps4/postgres/db:/media/apps4/postgres/db:rw
-    env_file:
-        - ./scripts/env_file
+        - ./scripts/sql/:/docker-entrypoint-initdb.d/
+        - ./pg-data:/var/lib/postgresql/data
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
         - 6432:5432
-    environment:
-      POSTGRES_PASSWORD:
-      POSTGRES_DB: transcribeapp_db
-      PGDATA: /opt/apps/postgres/db
     networks:
         - dbnet
-        
-volumes:
-  postgresdb-data:
 networks:
   dbnet:
     driver: bridge
-

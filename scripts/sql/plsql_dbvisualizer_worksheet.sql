@@ -112,7 +112,7 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
 
 select * from APPUSERS_TRANSCRIPTIONS;
 
-  delete from table APPUSERS cascade;
+  delete from APPUSERS cascade;
 
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'rajesh','hazare','rajesh_hazari@yahoo.com','27560');
@@ -121,17 +121,17 @@ insert into APPUSERS (username, password, active, first_name, last_name, email, 
 --update APPUSERS set password ='$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy' where email='rajesh_hazari@yahoo.com';
 --delete from table APPUSERS_UPDATE_LOG;
 select * from APPUSERS_UPDATE_LOG;
-select * from appusers where email='rajesh_hazari@yahoo.com'
+select * from appusers where email='rajesh_hazari@yahoo.com';
 
 delete from appusers_auth;
-insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com','ROLE_BASIC_USER');
-insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_SUPER_ADMIN');
-insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com','ROLE_PREMIUM_USER');
+insert into appusers_auth (userid,username,email,role_id) values (7,'rajeshhazari','rajeshhazari@gmail.com','ROLE_BASIC_USER');
+insert into appusers_auth (userid,username,email,role_id) values (8,'rajeshh','rajesh_hazari@yahoo.com','ROLE_SUPER_ADMIN');
+insert into appusers_auth (userid,username,email,role_id) values (8,'rajeshh','rajesh_hazari@yahoo.com','ROLE_PREMIUM_USER');
 
-insert into appusers_auth (userid,username,email,role_id)  values (3,'devuser','transcriibedevappuser@yahoo.com','ROLE_DEVOPS')
+insert into appusers_auth (userid,username,email,role_id)  values (9,'devuser','transcribedevappuser@yahoo.com','ROLE_DEVOPS')
 
 select * from appusers_auth;
-select * from appusers;
+select userid from appusers where username ='rajeshhazari';
 select * from authorities_master;
 drop table APPUSERS_UPDATE_LOG cascade;
 
@@ -214,10 +214,9 @@ select * from APPUSERS_TRANSCRIPTIONS;
 insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size) values (1,'rajeshhazari@gmail.com', 'sample.wav', 'one two threee and so on.. sample response',30);
 insert into TRANSCRIBEFILELOG   (LOG_ID,email,FILE_NAME,TRANSCRIBE_RES,file_size) values (3,'rajesh_hazari', 'sample.wav',  'one two threee and so on.. sample response', 31);
 
-insert into appusers_auth (userid,usename,email,role_id)  values (3,devuser,transcriibedevappuser@yahoo.com,'ROLE_DEVOPS')
 
 
-select * from appusers_auth;
+select * from APPUSERS_AUTH;
 
  
 CREATE TABLE CUSTOMERCONTACTMESSAGES (
@@ -244,5 +243,14 @@ CREATE TABLE CUSTOMERCONTACTMESSAGES (
   emailSentDate  timestamp default CURRENT_TIMESTAMP,
   verificationDate timestamp not null
 );
+commit
+select * from COUNTRY_MASTER;
+DELETE FROM public.country_master WHERE id=2;
+
+select * from STATES_MASTER;
+select * from CITY_MASTER;
+
+SELECT id FROM public.states_master WHERE id=1;
+
 
 

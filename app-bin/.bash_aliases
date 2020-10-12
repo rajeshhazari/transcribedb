@@ -107,7 +107,7 @@ python --version
 
 sha256() { echo -n "$*" | shasum -a 256 ;}
 NOW=$(date +"%d-%m-%Y")
-echo $NOW 
+echo $NOW
 
 alias sshrajraspi01='ssh  rajraspiadm@rajraspiiot01 -p 2121'
 alias sshdevuserappserver='ssh  devuser@devappserver-api -p 2121'
@@ -129,7 +129,7 @@ function extract() {
 	  echo -e "File does not exist!"
 	  return 2 # File not found
 	fi
-	
+
 	if [[ ! -z "$2" ]]; then
 	  echo "Destination dir :: $2"
 	  DESTDIR=$2
@@ -212,3 +212,19 @@ alias npug='npm update -g'
 
 # Npm search
 alias nps='npm search'
+
+dcstop() { docker ps -a; docker container stop $1; docker container  rm $1; }; alias dcstop=dcstop;
+
+alias proxyon="export http_proxy='http://devappserver-api:8888';export https_proxy='http://devappserver-api:8888'"
+alias proxyoff="export http_proxy='';export https_proxy=''"
+
+PYTHON_VERSION=$(python --version)
+echo $PYTHON_VERSION
+if [ -z $PYTHON_VERSION ]; then
+	PYTHON3_HOME="/usr/bin/python3.6";
+		if [ -d $PYTHON3_HOME ]; then
+			alias python=$PYTHON3_HOME
+		fi
+	else
+		python --version
+fi

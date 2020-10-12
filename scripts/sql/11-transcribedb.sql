@@ -3,7 +3,7 @@
 --
 
 SET statement_timeout = 0;
---SET AUTOCOMMIT = ON;
+--SET COMMIT = ON;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -12,12 +12,12 @@ SET client_min_messages = warning;
 SET search_path = public, pg_catalog;
 
 --drop database IF EXISTS transcribeapp_db;
- CREATE DATABASE transcribeapp_db;
+CREATE DATABASE transcribeapp_db;
 
 --DROP TRIGGER last_updated ON transcribeapp_db.users;
 --DROP TRIGGER last_updated ON transcribeapp_db.unregistered_users;
-DROP SCHEMA if exists  transcribe_schema;
-CREATE SCHEMA transcribe_schema;
+DROP SCHEMA if exists  transcribeapp_schema;
+CREATE SCHEMA transcribeapp_schema;
 ALTER DATABASE transcribeapp_db OWNER TO devuser;
 
 --ALTER TABLE APPUSERS_TRANSCRIPTIONS DROP CONSTRAINT IF EXISTS FK_Users_Transcriptions_users;
@@ -39,7 +39,7 @@ DROP TABLE IF EXISTS QRTZ_CALENDARS;
 DROP TABLE IF EXISTS APPUSERS CASCADE;
 --DROP TABLE IF EXISTS authorities_user CASCADE;
 DROP TABLE IF EXISTS APPUSERS_AUTH CASCADE;
-DROP TABLE IF EXISTS authorities_master cascade;
+DROP TABLE IF EXISTS AUTHORITIES_MASTER cascade;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
 DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
 DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS CASCADE;
@@ -49,15 +49,15 @@ DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
 
 DROP TABLE IF EXISTS USER_SESSIONS;
 DROP TABLE IF EXISTS USER_SESSIONS_ATTRIBUTES;
-DROP TABLE IF EXISTS address;
+DROP TABLE IF EXISTS APPUSERS_ADDRESS;
 DROP SEQUENCE IF EXISTS address_address_id_seq;
 DROP TABLE IF EXISTS US_STATES;
 DROP TABLE IF EXISTS STATES_master CASCADE;
-DROP TABLE IF EXISTS city_master CASCADE;
+DROP TABLE IF EXISTS CITY_MASTER CASCADE;
 DROP SEQUENCE IF EXISTS city_city_id_seq;
-DROP TABLE IF EXISTS country_master CASCADE;
+DROP TABLE IF EXISTS COUNTRY_MASTER CASCADE;
 DROP SEQUENCE IF EXISTS country_country_id_seq;
-DROP TABLE IF EXISTS payment CASCADE;
+DROP TABLE IF EXISTS PAYMENT CASCADE;
 DROP SEQUENCE IF EXISTS payment_payment_id_seq;
 DROP TABLE  IF EXISTS  SPRING_SESSION CASCADE;
 DROP TABLE IF EXISTS SPRING_SESSION_ATTRIBUTES CASCADE;
@@ -328,7 +328,7 @@ ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_
 
 
 
-CREATE TABLE AUTHORITIES_MASTER (
+CREATE TABLE AUTHOrities_MASTER (
  id serial PRIMARY KEY ,
  role_id VARCHAR(50) unique,
  roledesc VARCHAR(400),
@@ -345,8 +345,8 @@ CREATE TABLE APPUSERS_AUTH (
  email text not null,
  role_id VARCHAR(50) not null,
  updated_time timestamp default CURRENT_TIMESTAMP,
- 
- CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES authorities_master (role_id),
+
+ CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES AUTHORITIES_MASTER (role_id),
  CONSTRAINT FK_APPUSERS_AUTH_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email)
 );
 
@@ -450,7 +450,7 @@ CREATE TABLE CUSTOMERCONTACTMESSAGES (
 
 
 
-CREATE TABLE ADDRESS (
+CREATE TABLE APPUSERS_ADDRESS (
     address_id SERIAL PRIMARY KEY,
     address1 text NOT NULL,
     address2 text,
@@ -488,7 +488,7 @@ CREATE TABLE STATES_MASTER (
 --
 -- Name: city; Type: TABLE; Schema: public; Owner: postgres
 --
-drop table if exists city_master  cascade;
+drop table if exists CITY_MASTER  cascade;
 
 CREATE TABLE CITY_MASTER (
     city_id serial PRIMARY KEY,
@@ -534,7 +534,7 @@ CREATE TABLE CITY_MASTER (
 --
 DROP TABLE IF EXISTS PAYMENT CASCADE;
 
-CREATE TABLE payment (
+CREATE TABLE PAYMENT (
     payment_id SERIAL,
     user_id smallint NOT NULL,
     transcribtion_id integer NOT NULL,
@@ -545,8 +545,8 @@ CREATE TABLE payment (
 
 
 
-ALTER TABLE payment drop constraint payment_pkey;
-ALTER TABLE payment  ADD CONSTRAINT payment_pkey UNIQUE (payment_id, payment_date);
+ALTER TABLE PAYMENT drop constraint payment_pkey;
+ALTER TABLE PAYMENT  ADD CONSTRAINT payment_pkey UNIQUE (payment_id, payment_date);
 
 
     --
@@ -560,7 +560,7 @@ ALTER TABLE payment  ADD CONSTRAINT payment_pkey UNIQUE (payment_id, payment_dat
     -- Name: idx_fk_city_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
     --
 
-    CREATE INDEX idx_fk_city_id ON address USING btree (city_id);
+    CREATE INDEX idx_fk_city_id ON APPUSERS_ADDRESS USING btree (city_id);
 
 
 
@@ -568,7 +568,7 @@ ALTER TABLE payment  ADD CONSTRAINT payment_pkey UNIQUE (payment_id, payment_dat
     -- Name: idx_fk_customer_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
     --
 
-    CREATE INDEX idx_fk_user_id ON payment USING btree (user_id);
+    CREATE INDEX idx_fk_user_id ON PAYMENT USING btree (user_id);
 
 
 
@@ -615,7 +615,7 @@ END $$;
 -- Name: last_updated; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE PROCEDURE last_updated();
+CREATE TRIGGER last_updated BEFORE UPDATE ON APPUSERS_ADDRESS FOR EACH ROW EXECUTE PROCEDURE last_updated();
 
 
 
@@ -671,7 +671,6 @@ CREATE TRIGGER APPUSERS_PROFILE_DEL_LOG
     FOR EACH STATEMENT EXECUTE FUNCTION process_users_profile_audit();
 
 
-/
 
 
 COMMIT;

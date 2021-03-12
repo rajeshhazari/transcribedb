@@ -31,11 +31,10 @@ function checkSolrIsRunning() {
 
 }
 
-
 function forceStopSolrDockerContainer() {
   #statements
   CONTAINER_NAME=$1
-  
+
     cid="$(docker ps -aq --filter name="$CONTAINER_NAME" -q)"
     echo $cid
     if [[ ! -z "$cid" ]]; then
@@ -43,23 +42,24 @@ function forceStopSolrDockerContainer() {
         ( docker stop $cid > /dev/null && echo Stopped container $cid && \
     docker rm $cid ) 2>/dev/null || true
     fi
-  
-    ##check if an exited container blocks, so you can remove it first 
+
+    ##check if an exited container blocks, so you can remove it first
     cid="$(docker ps -aq -f status=exited -f status=created -f name=$CONTAINER_NAME )"
     if [[ ! -z $cid ]]; then
         # cleanup called
         docker stop $cid && docker rm $cid
-        if [ $? -eq 0 ]; then
-             echo "Stopped and removed container $cid"
-        else
-            echo "failed to stop Stop  or remove container $cid"
-            docker ps -a
-        fi
+	if [ $? -eq 0 ]; then
+	     echo "Stopped and removed container $cid"
+	else
+	    echo "failed to stop Stop  or remove container $cid"
+	    docker ps -a
+	fi
 
-        echo "cleanup called ::transcribeapp_solr_dev"
+        echo "cleanup called :: $CONTAINER_NAME "
     fi
 
 }
+
 
 
 ## TODO we can make this method generic to any image start
@@ -67,7 +67,7 @@ function startImageWithOptions() {
     #statements
     IMAGE_ID=$SOLR_IMAGE_NAME
     ##CONTAINER_NAME=$2
-    RUN_OPTIONS="-p 8983:8983 -l $CONTAINER_NAME   -v $SOLR_APP_DIR/solrdata:/var/solr  -v /opt/apps/scripts/alias.sh:/opt/solr/configs/alias.sh -v /opt/apps/solr/configs/solr.in.sh:/etc/default/solr.in.sh   -v $SOLR_APP_DIR/configs/configs/transcribedb-configs:/opt/sol$
+    RUN_OPTIONS="-p 8983:8983 -l $CONTAINER_NAME   -v $SOLR_APP_DIR/solrdata:/var/solr  -v /opt/apps/app-bin:/opt/apps/ -v /opt/apps/solr/configs/solr.in.sh:/etc/default/solr.in.sh   -v $SOLR_APP_DIR/configs/configs/transcribedb-configs:/opt/solr/server/solr/configsets/transcribedb-configs   -v $SOLR_APP_DIR/configs/configs/:/opt/solr/server/solr/configsets   --env-file solr_env  $SOLR_IMAGE_NAME solr -c -h ${HOSTNAME} -m 2g -f "
     docker run -itd  --restart=always --name $CONTAINER_NAME $RUN_OPTIONS
 
 }
@@ -87,7 +87,7 @@ if [ -d $SOLR_APP_DIR ]; then
         if [[ ! -z $status ]]; then
             echo -e "\nWARN: Container with name is running $CONTAINER_NAME  . Going to force stop and delete forcefully."
             forceStopSolrDockerContainer $CONTAINER_NAME
-             startImageWithOptions $CONTAINER_NAME
+	     startImageWithOptions $CONTAINER_NAME
         else
             echo "starting the image in else "
             startImageWithOptions $CONTAINER_NAME
@@ -101,5 +101,3 @@ else
   exit -1
 fi
 exit $?
-
-

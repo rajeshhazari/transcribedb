@@ -13,7 +13,7 @@ services:
     container_name: "${POSTGRES_DB}_${NODE_ENV}-db"
     restart: always
     volumes:
-        - /opt/apps/scripts/alias.sh:/home/alias.sh
+        - ./app-bin/:/home/:rw
         - ./my-postgres.conf:/etc/postgresql/postgresql.conf
         - ./scripts/sql/:/docker-entrypoint-initdb.d/
         - ./pg-data:/var/lib/postgresql/data

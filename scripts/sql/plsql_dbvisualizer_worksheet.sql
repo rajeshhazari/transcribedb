@@ -12,7 +12,8 @@ CREATE TABLE authorities_master (
  max_file_size int not null,
  max_number_files int not null
 );
-select * from appusers;
+select * from APPUSERS where email='rajesh_hazari@yahoo.com';
+select * from APPUSERS where email like 'rajesh_hazari@yah%';
 select * from appusers_auth;
 select * from authorities_master;
 
@@ -252,5 +253,12 @@ select * from CITY_MASTER;
 
 SELECT id FROM public.states_master WHERE id=1;
 
+
+
+-------------------------------------------------------------------------------------------------------------
+
+
+CREATE DATABASE next_cloud_db;
+ALTER DATABASE next_cloud_db OWNER TO devuser;
 
 

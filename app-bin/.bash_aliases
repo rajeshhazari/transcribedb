@@ -97,7 +97,7 @@ alias fgrep='fgrep --color=auto'
 alias ls='ls --color=auto'
 
 ## Use a long listing format ##
-alias ll='ls -la'
+alias ll='ls -lah'
 
 ## Show hidden files ##
 alias l.='ls -d .* --color=auto'
@@ -112,7 +112,7 @@ echo $NOW
 alias sshrajraspi01='ssh  rajraspiadm@rajraspiiot01 -p 2121'
 alias sshdevuserappserver='ssh  devuser@devappserver-api -p 2121'
 #alias grep='grep -v grep | '
-alias sshdevuserappserver138='ssh  devuser@192.168.1.138 -p 2121'
+alias sshdevuserappserver08='ssh  devuser@192.168.0.8 -p 2121'
 alias cdhomeproject='cd /mnt/Java/home-projects/ && ls -lrth'
 alias sshdevuserqaappserver='ssh  devuser@qa-appserver-api.com -p 2121'
 alias sshrootqaappser239='ssh  devuser@192.168.1.239 -p 21 '
@@ -228,3 +228,15 @@ if [ -z $PYTHON_VERSION ]; then
 	else
 		python --version
 fi
+
+gen_passwd() {
+    local length=$1
+    local charset="$2"
+    local password=""
+    while [ ${#password} -lt "$length" ]
+    do
+        password=$(echo "$password""$(head -c 100 /dev/urandom | LC_ALL=C tr -dc "$charset")" | fold -w "$length" | head -n 1)
+    done
+    echo "$password"
+}
+export PUBLIC_IP=$(dig +short myip.opendns.com @resolver1.opendns.com) && echo $PUBLIC_IP

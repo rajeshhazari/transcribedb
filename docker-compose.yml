@@ -13,10 +13,10 @@ services:
     container_name: "${POSTGRES_DB}_${NODE_ENV}-db"
     restart: always
     volumes:
-        - ./app-bin/:/home/:rw
+        - ./app-bin/:/opt/apps/app-bin/:rw
         - ./my-postgres.conf:/etc/postgresql/postgresql.conf
         - ./scripts/sql/:/docker-entrypoint-initdb.d/
-        - ./pg-data:/var/lib/postgresql/data
+        - pg-data:/var/lib/postgresql/data
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
         - 6432:5432
